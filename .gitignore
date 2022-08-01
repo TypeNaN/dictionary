@@ -3,6 +3,6 @@
 *.backup
 **/backup/**
 **/node_modules/**
-
+**/certificate/**
 
 requests.rest
