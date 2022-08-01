@@ -1,0 +1,2 @@
+# mandict
+My dictionary manager
