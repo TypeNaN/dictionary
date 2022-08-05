@@ -1,8 +1,17 @@
+# npm
+#---------------------------------------------------------
+**/node_modules/**
+package-lock.json
+
+# my files
+#---------------------------------------------------------
+*.backup
 *.env
 *.log
-*.backup
+*.rest
+
+# my directories
+#---------------------------------------------------------
 **/backup/**
-**/node_modules/**
 **/certificate/**
 
-requests.rest
