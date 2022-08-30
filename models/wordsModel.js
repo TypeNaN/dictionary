@@ -65,16 +65,37 @@ const add = async (req, res) => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const view = async (req, res) => {
+  let { by, target } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return res.status(fillter.statusCode).end()
+  words.findOne(fillter).then((result) => {
+    console.log(`View word ${target}`)
+    res.status(200).json(result)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เรียกดูคำศัพท์ทั้งหมดจาก collection words                                        |
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const views = async (req, res) => {
-  console.log('wordsView')
+  console.log('View all words')
   words.find().then((result) => res.status(200).json(result)).catch((err) => res.status(500).send(err.message))
 }
 
 
 module.exports = {
   add,
+  view,
   views
 }
