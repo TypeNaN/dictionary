@@ -83,7 +83,7 @@ mongoose.connect(
 const db = mongoose.connection
 
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
-db.once("open", () => console.log("MongoDB database connection established successfully"))
+db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
 
 
 const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} พุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
@@ -190,6 +190,7 @@ const test = async (req, res) => {
 }
 
 app.get('/', checkCore, test)
+app.get('/views', checkCore, words.views)
 app.get('/add/:name', checkCore, words.add)
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -231,7 +232,7 @@ httpsServer.listen(app.get('port_https'), () => {
   console.info(`♥ Buymecoffee -> https://buymeacoffee.com/TypeNaN`)
   console.info(`♥ Ko-fi       -> https://ko-fi.com/TypeNaN\n`)
 
-  console.info(`✔ HTTPS Server running on host ${config.hostname} ip ${config.ip } port ${app.get('port_https')} in ${app.get('env')}\n`)
+  console.info(`✔ HTTPS Server running on host ${config.hostname} ip ${config.ip } port ${app.get('port_https')} in ${app.get('env')}`)
 })
 
 
