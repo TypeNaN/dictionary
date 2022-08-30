@@ -21,6 +21,8 @@
     "compression": "^1.7.4",
     "dotenv": "^16.0.1",
     "express": "^4.17.1",
+    "express-rate-limit": "^6.5.2",
+    "mongoose": "^6.5.4",
     "nodemon": "^2.0.15",
     "serve-favicon": "^2.5.0",
     "socket.io": "^4.4.0"
