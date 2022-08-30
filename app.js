@@ -63,6 +63,7 @@ for (const name of Object.keys(nets)) {
   }
 }
 
+const words     = require('./models/wordsModel.js')
 const mongoose  = require('mongoose')
 
 mongoose.connect(
@@ -189,6 +190,7 @@ const test = async (req, res) => {
 }
 
 app.get('/', checkCore, test)
+app.get('/add/:name', checkCore, words.add)
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เส้นทางบริการ socket                                                          |
