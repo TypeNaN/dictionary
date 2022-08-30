@@ -1,4 +1,4 @@
-<p align="center"><img src="../main/public/assets/192x192.png" alt="Favicon" width="192" height="192"/></p>
+<p align="center"><img src="../main/public/assets/banner640x320.png" alt="Favicon" width="640" height="320"/></p>
 
 
 <h1 align="center">DICTIONARY</h1>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1280"
+   height="640"
+   viewBox="0 0 338.66666 169.33333"
+   version="1.1"
+   id="svg256"
+   inkscape:version="1.2.1 (2ed6d7ae0b, 2022-08-22, custom)"
+   sodipodi:docname="banner.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview258"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.4204826"
+     inkscape:cx="668.27973"
+     inkscape:cy="362.6785"
+     inkscape:window-width="1366"
+     inkscape:window-height="704"
+     inkscape:window-x="26"
+     inkscape:window-y="23"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs253" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#000000;stroke-width:9.26968"
+       id="rect481"
+       width="338.66666"
+       height="169.33333"
+       x="0"
+       y="0" />
+    <rect
+       style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:9.66411"
+       id="rect1144"
+       width="13.473006"
+       height="183.89536"
+       x="-0.233235"
+       y="0.14381622"
+       transform="matrix(1,0,0.39185357,0.9200276,0,0)" />
+    <text
+       xml:space="preserve"
+       style="font-weight:800;font-size:127.329px;line-height:1.25;font-family:k2d;-inkscape-font-specification:'k2d Ultra-Bold';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:0.264583"
+       x="69.592171"
+       y="133.45012"
+       id="text1040"><tspan
+         sodipodi:role="line"
+         id="tspan1038"
+         style="fill:#ffffff;stroke-width:0.264583"
+         x="69.592171"
+         y="133.45012">D</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-weight:800;font-size:44.389px;line-height:1.25;font-family:k2d;-inkscape-font-specification:'k2d Ultra-Bold';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:0.264583"
+       x="204.16588"
+       y="129.32768"
+       id="text630"><tspan
+         sodipodi:role="line"
+         id="tspan628"
+         style="fill:#ffffff;stroke-width:0.264583"
+         x="204.16588"
+         y="129.32768">ictionary</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-weight:800;font-size:12.7px;line-height:1.25;font-family:k2d;-inkscape-font-specification:'k2d Ultra-Bold';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:0.264583"
+       x="298.44675"
+       y="20.824869"
+       id="text684"><tspan
+         sodipodi:role="line"
+         id="tspan682"
+         style="fill:#ffffff;stroke-width:0.264583"
+         x="298.44675"
+         y="20.824869">TypeNaN</tspan></text>
+  </g>
+</svg>
