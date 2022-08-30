@@ -42,6 +42,8 @@ const wordsSchema = new mongoose.Schema({
 const words = mongoose.model(collection, wordsSchema)
 
 const remove_spacails = (data) => data.replace(/[\`~!@#$%^&*\(\)+=\[\]\{\};:\'\"\\|,.<>/?]/g, '')
+const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 403 }
+
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เพิ่มคำศัพท์ลงใน collection words                                              |
@@ -75,7 +77,7 @@ const view = async (req, res) => {
   fillter = (by == 'id' ? isId(target) : { name: target })
   if ('statusCode' in fillter) return res.status(fillter.statusCode).end()
   words.findOne(fillter).then((result) => {
-    console.log(`View word ${target}`)
+    console.log(`View word by ${by} ${target}`)
     res.status(200).json(result)
   }).catch((err) => {
     console.error(err)
@@ -89,13 +91,35 @@ const view = async (req, res) => {
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const views = async (req, res) => {
-  console.log('View all words')
-  words.find().then((result) => res.status(200).json(result)).catch((err) => res.status(500).send(err.message))
+  words.find().then((result) => {
+    console.log('View all words')
+    res.status(200).json(result)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
 }
 
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูคำศัพท์ทั้งหมดที่ชึ้นต้นด้วยคำค้นหาจาก collection words                         |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const search = async (req, res) => {
+  let { name } = req.params
+  name = remove_spacails(decodeURIComponent(name))
+  words.find({ name: { $regex: name, $options: 'i' } }).then((result) => {
+    console.log(`Search words match ${name}`)
+    res.status(200).json(result)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
 
 module.exports = {
   add,
   view,
-  views
+  views,
+  search
 }

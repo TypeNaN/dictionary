@@ -194,6 +194,8 @@ app.get('/', checkCore, test)
 app.get('/views', checkCore, words.views)
 app.get('/view/:by/:target', checkCore, words.view)
 
+app.get('/search/:name', checkCore, words.search)
+
 app.get('/add/:name', checkCore, words.add)
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
