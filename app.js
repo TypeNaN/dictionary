@@ -63,6 +63,28 @@ for (const name of Object.keys(nets)) {
   }
 }
 
+const mongoose  = require('mongoose')
+
+mongoose.connect(
+  `mongodb://${config.dbUser}:${config.dbPass}@${config.dbUrl}/${config.dbUse}`,{
+    retryWrites:true,
+    w:'majority',
+    //useNewUrlParser: true, // Boilerplate for Mongoose 5.x
+    useUnifiedTopology: true,
+    autoIndex: true, // Build indexes
+    maxPoolSize: 1, // Maintain up to 1 socket connections
+    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    family: 4 // Use IPv4, skip trying IPv6
+  }
+)
+
+const db = mongoose.connection
+
+db.on('error', console.error.bind(console, 'mongoose connection error:'))
+db.once("open", () => console.log("MongoDB database connection established successfully"))
+
+
 const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} พุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
 const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + 543)}-${(d.toLocaleTimeString('TH'))}`
 
@@ -167,7 +189,6 @@ const test = async (req, res) => {
 }
 
 app.get('/', checkCore, test)
-
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เส้นทางบริการ socket                                                          |
