@@ -42,7 +42,7 @@ const wordsSchema = new mongoose.Schema({
 const words = mongoose.model(collection, wordsSchema)
 
 const remove_spacails = (data) => data.replace(/[\`~!@#$%^&*\(\)+=\[\]\{\};:\'\"\\|,.<>/?]/g, '')
-const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 403 }
+const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -75,7 +75,10 @@ const view = async (req, res) => {
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
   fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) return res.status(fillter.statusCode).end()
+  if ('statusCode' in fillter) {
+    console.error(`View word by ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
   words.findOne(fillter).then((result) => {
     console.log(`View word by ${by} ${target}`)
     res.status(200).json(result)
@@ -92,7 +95,7 @@ const view = async (req, res) => {
 
 const views = async (req, res) => {
   words.find().then((result) => {
-    console.log('View all words')
+    console.log(`View all ${result.length} words`)
     res.status(200).json(result)
   }).catch((err) => {
     console.error(err)
@@ -117,9 +120,35 @@ const search = async (req, res) => {
   })
 }
 
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำศัพท์ 1 รายการจาก collection words                                       |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const remove = async (req, res) => {
+  let { by, target } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Remove word by ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  words.deleteOne(fillter)
+  .then((result) => {
+    console.log(`Remove word by ${by} ${target} deleted count ${result.deletedCount}`)
+    res.status(200).json(result)
+  }).catch ((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
 module.exports = {
   add,
   view,
   views,
-  search
+  search,
+  remove
 }

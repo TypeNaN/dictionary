@@ -207,6 +207,9 @@ app.get('/search/:name', checkCore, words.search)
 
 app.get('/add/:name', checkCore, words.add)
 
+app.delete('/remove/:by/:target', checkCore, words.remove)
+
+
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เส้นทางบริการ socket                                                          |
 // └────────────────────────────────────────────────────────────────────────────┘
