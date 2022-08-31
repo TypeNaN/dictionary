@@ -134,8 +134,7 @@ const remove = async (req, res) => {
     console.error(`Remove word by ${by} ${target} status code ${fillter.statusCode}`)
     return res.status(fillter.statusCode).end()
   }
-  words.deleteOne(fillter)
-  .then((result) => {
+  words.deleteOne(fillter).then((result) => {
     console.log(`Remove word by ${by} ${target} deleted count ${result.deletedCount}`)
     res.status(200).json(result)
   }).catch ((err) => {
@@ -145,10 +144,41 @@ const remove = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลทั้งหมดของคำศัพท์ 1 รายการจาก collection words                         |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const patch = async (req, res) => {
+  const data = req.body
+  let { by, target } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Patch word by ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  words.findOneAndUpdate(fillter, data, {
+    new: false,
+    upsert: true,
+    rawResult: true 
+  }).then((result) => {
+    console.log(`Patch word by ${by} ${target} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}
+    \nOld data ${JSON.stringify(result.value)}
+    \nPatch ${JSON.stringify(data)}
+    `)
+    res.json({ from: result, to: data })
+  }).catch ((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
 module.exports = {
   add,
-  view,
-  views,
+  patch,
+  remove,
   search,
-  remove
+  views,
+  view
 }
