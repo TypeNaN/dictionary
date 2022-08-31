@@ -166,7 +166,7 @@ const patch = async (req, res) => {
     \nOld data ${JSON.stringify(result.value)}
     \nPatch ${JSON.stringify(data)}
     `)
-    res.json({ from: result, to: data })
+    res.json({ original: result.value, patch: data })
   }).catch ((err) => {
     console.error(err)
     res.status(500).send(err.message)
@@ -174,9 +174,42 @@ const patch = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลในคีย์ที่กำหนดของคำศัพท์ 1 รายการจาก collection words                    |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const patchKey = async (req, res) => {
+  const data = req.body
+  let { by, target, key } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  key = remove_spacails(decodeURIComponent(key))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Patch word by ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  console.log('patchKey', by, target, key)
+  words.findOneAndUpdate(fillter, {[key]: data[key] }, {
+    new: false,
+    upsert: true,
+    rawResult: true
+  }).then((result) => {
+    console.log(`Patch word by ${by} ${target} key ${key} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}
+    \nOld data ${JSON.stringify(result.value)}
+    \nPatch ${JSON.stringify(data)}
+    `)
+    res.json({ original: result.value, patch: data })
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
 module.exports = {
   add,
   patch,
+  patchKey,
   remove,
   search,
   views,

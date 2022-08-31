@@ -209,6 +209,7 @@ app.get('/search/:name', checkCore, words.search)
 app.get('/add/:name', checkCore, words.add)
 
 app.put('/patch/:by/:target', checkCore, words.patch)
+app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
 
 app.delete('/remove/:by/:target', checkCore, words.remove)
 
