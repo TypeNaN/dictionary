@@ -227,6 +227,7 @@ app.get('/view/:by/:target', checkCore, words.view)
 app.get('/search/:name', checkCore, words.search)
 
 app.get('/add/:name', checkCore, words.add)
+app.get('/add/prev/:by/:target/:previous', checkCore, words.addPrev)
 
 app.put('/patch/:by/:target', checkCore, words.patch)
 app.put('/patch/:by/:target/:key', checkCore, words.patchKey)

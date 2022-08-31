@@ -41,8 +41,9 @@ const wordsSchema = new mongoose.Schema({
 
 const words = mongoose.model(collection, wordsSchema)
 
-const remove_spacails = (data) => data.replace(/[\`~!@#$%^&*\(\)+=\[\]\{\};:\'\"\\|,.<>/?]/g, '')
+const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"\\|,.<>/?]/g, '')
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
+const hline = '\n────────────────────────────────────────────────────────────────────────────────\n'
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -63,6 +64,40 @@ const add = async (req, res) => {
     console.error(err)
     return res.status(500).send(err.message)
   })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const addPrev = async (req, res) => {
+  let { by, target, previous } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`View word by ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.log(`Can't add ${previous} as previous of ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}`)) {
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+    const newDoc = await doc.save()
+    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+    return res.json(newDoc)
+  }
+  console.log(`Can't add ${previous} as previous of ${target} because ${previous} existing`)
+  res.status(304).end()
 }
 
 
@@ -162,10 +197,7 @@ const patch = async (req, res) => {
     upsert: true,
     rawResult: true 
   }).then((result) => {
-    console.log(`Patch word by ${by} ${target} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}
-    \nOld data ${JSON.stringify(result.value)}
-    \nPatch ${JSON.stringify(data)}
-    `)
+    console.log(`Patch word by ${by} ${target} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}${hline}Old data ${JSON.stringify(result.value)}${hline}Patch ${JSON.stringify(data)}${hline}`)
     res.json({ original: result.value, patch: data })
   }).catch ((err) => {
     console.error(err)
@@ -189,16 +221,12 @@ const patchKey = async (req, res) => {
     console.error(`Patch word by ${by} ${target} status code ${fillter.statusCode}`)
     return res.status(fillter.statusCode).end()
   }
-  console.log('patchKey', by, target, key)
   words.findOneAndUpdate(fillter, {[key]: data[key] }, {
     new: false,
     upsert: true,
     rawResult: true
   }).then((result) => {
-    console.log(`Patch word by ${by} ${target} key ${key} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}
-    \nOld data ${JSON.stringify(result.value)}
-    \nPatch ${JSON.stringify(data)}
-    `)
+    console.log(`Patch word by ${by} ${target} key ${key} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}${hline}Old data ${JSON.stringify(result.value)}${hline}Patch ${JSON.stringify(data)}${hline}`)
     res.json({ original: result.value, patch: data })
   }).catch((err) => {
     console.error(err)
@@ -208,6 +236,7 @@ const patchKey = async (req, res) => {
 
 module.exports = {
   add,
+  addPrev,
   patch,
   patchKey,
   remove,
