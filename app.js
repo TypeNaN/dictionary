@@ -1,7 +1,31 @@
-const SERVICETIME = new Date()
-const UNIXTIMESTART = Math.floor(SERVICETIME.getTime())
+const born = new Date()
 const thday = new Array("อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์")
 const thmonth = new Array("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
+const dayofmonth = new Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+
+const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} พุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
+const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + 543)}-${(d.toLocaleTimeString('TH'))}`
+
+const runtime = (start) => {
+  const now = new Date()
+  const dyy = now.getFullYear() - start.getFullYear()
+  const dmm = now.getMonth() < start.getMonth()
+    ? (12 + now.getMonth()) - start.getMonth()
+    : now.getMonth() - start.getMonth()
+  const ddd = now.getDate() < start.getDate()
+    ? (dayofmonth[now.getDate()] + now.getDate()) - start.getDate()
+    : now.getDate() - start.getDate()
+  const dhh = now.getHours() < start.getHours()
+    ? (24 + now.getHours()) - start.getHours()
+    : now.getHours() - start.getHours()
+  const dMM = now.getMinutes() < start.getMinutes()
+    ? (60 + now.getMinutes()) - start.getMinutes()
+    : now.getMinutes() - start.getMinutes()
+  const dss = now.getSeconds() < start.getSeconds()
+    ? (60 + now.getSeconds()) - start.getSeconds()
+    : now.getSeconds() - start.getSeconds()
+  return `${dyy} ปี ${dmm} เดือน ${ddd} วัน  ${dhh} ชั่วโมง ${dMM} นาที ${dss} วินาที`
+}
 
 const COLOR = {
   Reset: "\x1b[0m",
@@ -86,10 +110,6 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'mongoose connection error:'))
 db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
 
-
-const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} พุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
-const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + 543)}-${(d.toLocaleTimeString('TH'))}`
-
 const logFile = fs.createWriteStream('app.log', { flags: 'a' })
 // Or 'w' to truncate the file every time the process starts.
 
@@ -131,7 +151,7 @@ new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
     const t = sdtt(new Date())
     if (methodName == 'error') {
       logFile.write(`${t} [ERROR] ${initiator_file} ✘ ${args}\n`)
-      originalMethod.apply(console, [`${initiator} => ${COLOR.FgRed}✘ ${args}${COLOR.Reset}`])
+      originalMethod.apply(console, [`\n${initiator} => ${COLOR.FgRed}✘ ${args}${COLOR.Reset}`])
     } else if (methodName == 'warn') {
       logFile.write(`${t} [WARN]  ${initiator_file} ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgYellow}${args}${COLOR.Reset}`])
@@ -244,9 +264,9 @@ httpsServer.listen(app.get('port_https'), () => {
   console.info(`\n\n
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ เปิดบริการ
-| ${sdtt(SERVICETIME)}
-| ${dtt(SERVICETIME)}
-| ${SERVICETIME}
+| ${sdtt(born)}
+| ${dtt(born)}
+| ${born}
 └────────────────────────────────────────────────────────────────────────────┘\n\n`)
   console.info(`✔ Copyright © 2022 Chaimongkol Mangklathon (TypeNan)`)
   console.info(`✎ Source code -> https://github.com/TypeNaN`)
@@ -262,21 +282,21 @@ httpsServer.listen(app.get('port_https'), () => {
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const exitHandler = (options, err) => {
-  if (err) console.error(err)
+  if (err) {
+    console.info(`\n\n
+******************************************************************************
+* ปิดบริการ
+* ${dtt(new Date())}
+* รวมเวลา ${runtime(born)}
+******************************************************************************\n\n`)
+    console.error(err)
+  }
   if (err['stack']) console.error(err.stack)
   if (options.cleanup) {
     console.info('✔ คืนหน่วยความจำ')
     process.exit()
   }
-  if (options.exit) {
-    console.info(`\n\n
-******************************************************************************
-* ปิดบริการ
-* ${dtt(SERVICETIME)}
-******************************************************************************\n\n`)
-    console.info('✔ ปิดระบบโดยสมบูรณ์')
-    process.exit()
-  }
+  if (options.exit) console.info('✔ ปิดระบบโดยสมบูรณ์')
 }
 
 // เมื่อปิดแอพหรือแอพถูกปิดโดยเกิดจากปัญหาใดๆ ก็ตาม จะให้ทำอะไรก่อนจบปิดตัวลง
