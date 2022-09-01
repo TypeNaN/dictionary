@@ -68,40 +68,6 @@ const add = async (req, res) => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
-// └────────────────────────────────────────────────────────────────────────────┘
-
-const addPrev = async (req, res) => {
-  let { by, target, previous } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`View word by ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.log(`Can't add ${previous} as previous of ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-    const newDoc = await doc.save()
-    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
-    return res.json(newDoc)
-  }
-  console.log(`Can't add ${previous} as previous of ${target} because ${previous} existing`)
-  res.status(304).end()
-}
-
-
-// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
 // └────────────────────────────────────────────────────────────────────────────┘
 
@@ -234,9 +200,114 @@ const patchKey = async (req, res) => {
   })
 }
 
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const addPrev = async (req, res) => {
+  let { by, target, previous } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.log(`Can't add ${previous} as previous of ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}`)) {
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+    const newDoc = await doc.save()
+    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+    return res.json(newDoc)
+  }
+  console.log(`Can't add ${previous} as previous of ${target} because ${previous} existing`)
+  res.status(304).end()
+}
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const modPrev = async (req, res) => {
+  let { by, target, previous, edit, merge } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  edit = remove_spacails(decodeURIComponent(edit))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Modity word ${previous} to ${edit} from previous of ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const docA = await words.findOne(fillter).catch((err) => err)
+  if (docA && 'message' in docA) {
+    console.error(docA)
+    return res.status(500).send(docA.message)
+  }
+  if (!docA) {
+    console.error(`Can't modity word ${previous} to ${edit} from previous of ${target} because ${target} don't exist`) 
+    return res.status(304).end()
+  }
+  if (!docA.get(`tree.${edit}`)) {
+    if (!docA.get(`tree.${previous}`)) {
+      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+    } else {
+      const treeA = docA.get('tree')
+      await docA.$set(`tree.${edit}`, treeA[previous])
+      await docA.$set(`tree.${previous}`, undefined)
+    }
+    await docA.save()
+  } else {
+    if (!docA.get(`tree.${previous}`)) {
+      if (!docA.get(`tree.${edit}.${' '}`)) {
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+        await docA.$set(`tree.${previous}`, undefined)
+        await docA.save()
+        console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
+        return res.json(docA.tree)
+      }
+      console.log(`Can't modity word ${previous} to ${edit} from previous of ${target} because ${edit} exist`)
+      return res.status(304).end()
+    } else {
+      if (!docA.get(`tree.${edit}.${' '}`)) {
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+      }
+      const treeAprev = docA.get(`tree.${previous}`)
+      const treeAedit = docA.get(`tree.${edit}`)
+      const keyEdit = Object.keys(treeAedit)
+      if (merge === 'merge') {
+        Object.keys(treeAprev).forEach(key => {
+          if (keyEdit.includes(key)) {
+            treeAedit[key].freq = treeAedit[key].freq > treeAprev[key].freq ? treeAedit[key].freq : treeAprev[key].freq
+          } else {
+            treeAedit[key] = treeAprev[key]
+          }
+        })
+      }
+      await docA.$set(`tree.${previous}`, undefined)
+      await docA.save()
+    }
+  }
+  console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)  
+  res.json(docA.tree)
+}
+
+
+
 module.exports = {
   add,
   addPrev,
+  modPrev,
   patch,
   patchKey,
   remove,

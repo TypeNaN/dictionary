@@ -150,7 +150,7 @@ new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
     const t = sdtt(new Date())
     if (methodName == 'error') {
       logFile.write(`${t} [ERROR] ${initiator_file} ✘ ${args}\n`)
-      originalMethod.apply(console, [`\n${initiator} => ${COLOR.FgRed}✘ ${args}${COLOR.Reset}`])
+      originalMethod.apply(console, [`${initiator} => ${COLOR.FgRed}✘ ${args}${COLOR.Reset}`])
     } else if (methodName == 'warn') {
       logFile.write(`${t} [WARN]  ${initiator_file} ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgYellow}${args}${COLOR.Reset}`])
@@ -227,6 +227,9 @@ app.get('/search/:name', checkCore, words.search)
 
 app.get('/add/:name', checkCore, words.add)
 app.get('/add/prev/:by/:target/:previous', checkCore, words.addPrev)
+
+app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.modPrev)
+app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modPrev)
 
 app.put('/patch/:by/:target', checkCore, words.patch)
 app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
