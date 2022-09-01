@@ -24,7 +24,7 @@ const runtime = (start) => {
   const dss = now.getSeconds() < start.getSeconds()
     ? (60 + now.getSeconds()) - start.getSeconds()
     : now.getSeconds() - start.getSeconds()
-  return `${dyy} ปี ${dmm} เดือน ${ddd} วัน  ${dhh} ชั่วโมง ${dMM} นาที ${dss} วินาที`
+  return `${dyy} ปี ${dmm} เดือน ${ddd} วัน ${dhh} ชั่วโมง ${dMM} นาที ${dss} วินาที`
 }
 
 const COLOR = {
@@ -132,13 +132,12 @@ new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
             if (!isFirst) {
               let result = matches[1].split(' ')
               if (result.length > 1) {
-                result = result[1].replace('(' + __dirname + '/', '')
+                result = result[1].replace(`(${__dirname}/`, '')
                 result = result.replace(')', '')
-                result = result.split(':')
               } else {
-                result = result[0].replace(__dirname, '')
-                result = result.split(':')
+                result = result[0].replace(`${__dirname}/`, '')
               }
+              result = result.split(':')
               initiator = COLOR.FgBlue + result[0] + COLOR.Reset + ' [' + COLOR.FgYellow + row + COLOR.Reset + ':' + COLOR.FgMagenta + col + COLOR.Reset + ']'
               initiator_file = `${result[0]} [${row}:${col}]`
               break
@@ -262,7 +261,7 @@ io.on('connection', (socket) => {
 // └────────────────────────────────────────────────────────────────────────────┘
 
 httpsServer.listen(app.get('port_https'), () => {
-  console.info(`\n\n
+  console.log(`\n\n
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ เปิดบริการ
 | ${sdtt(born)}
@@ -284,15 +283,26 @@ httpsServer.listen(app.get('port_https'), () => {
 
 const exitHandler = (options, err) => {
   if (err) {
-    console.info(`\n\n
+    if (err['stack']) {
+      console.error(`${err.stack}\n\n
 ******************************************************************************
 * ปิดบริการ
 * ${dtt(new Date())}
 * รวมเวลา ${runtime(born)}
 ******************************************************************************\n\n`)
-    console.error(err)
+      // console.error(err.stack)
+    } else {
+      if (err === 'SIGINT') {
+        console.log(`\n\n
+******************************************************************************
+* ปิดบริการ
+* ${dtt(new Date())}
+* รวมเวลา ${runtime(born)}
+******************************************************************************\n\n`)
+        console.error(err)
+      }
+    }
   }
-  if (err['stack']) console.error(err.stack)
   if (options.cleanup) {
     console.info('✔ คืนหน่วยความจำ')
     process.exit()
