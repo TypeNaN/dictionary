@@ -255,7 +255,7 @@ const modPrev = async (req, res) => {
     return res.status(500).send(docA.message)
   }
   if (!docA) {
-    console.error(`Can't modity word ${previous} to ${edit} from previous of ${target} because ${target} don't exist`) 
+    console.error(`Can't modify word ${previous} to ${edit} from previous of ${target} because ${target} don't exist`) 
     return res.status(304).end()
   }
   if (!docA.get(`tree.${edit}`)) {
@@ -264,14 +264,14 @@ const modPrev = async (req, res) => {
     } else {
       const treeA = docA.get('tree')
       await docA.$set(`tree.${edit}`, treeA[previous])
-      await docA.$set(`tree.${previous}`, undefined)
+      await docA.$set(`tree.${previous}`, undefined, { strict: true })
     }
     await docA.save()
   } else {
     if (!docA.get(`tree.${previous}`)) {
       if (!docA.get(`tree.${edit}.${' '}`)) {
         await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-        await docA.$set(`tree.${previous}`, undefined)
+        await docA.$set(`tree.${previous}`, undefined, { strict: true })
         await docA.save()
         console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
         return res.json(docA.tree)
@@ -294,12 +294,46 @@ const modPrev = async (req, res) => {
           }
         })
       }
-      await docA.$set(`tree.${previous}`, undefined)
+      await docA.$set(`tree.${previous}`, undefined, { strict: true })
       await docA.save()
     }
   }
   console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)  
   res.json(docA.tree)
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const removePrev = async (req, res) => {
+  let { by, target, previous } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Remove word previous ${previous} from ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.error(`Can't remove word previous ${previous} from ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (doc.get(`tree.${previous}`)) {
+    await doc.$set(`tree.${previous}`, undefined, { strict: true })
+    console.log(`Remove word previous ${previous} from ${target} successfully`)
+    const newDoc = await doc.save()
+    return res.json(newDoc)
+  }
+  console.error(`Can't remove word previous ${previous} from ${target} because ${previous} don't exist`)
+  return res.status(304).end()
 }
 
 
@@ -310,6 +344,7 @@ module.exports = {
   modPrev,
   patch,
   patchKey,
+  removePrev,
   remove,
   search,
   views,

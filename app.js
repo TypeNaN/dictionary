@@ -235,6 +235,7 @@ app.put('/patch/:by/:target', checkCore, words.patch)
 app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
 
 app.delete('/remove/:by/:target', checkCore, words.remove)
+app.delete('/remove/prev/:by/:target/:previous', checkCore, words.removePrev)
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
