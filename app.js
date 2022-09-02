@@ -227,6 +227,7 @@ app.get('/search/:name', checkCore, words.search)
 
 app.get('/add/:name', checkCore, words.add)
 app.get('/add/prev/:by/:target/:previous', checkCore, words.addPrev)
+app.get('/add/next/:by/:target/:previous/:next', checkCore, words.addNext)
 
 app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.modPrev)
 app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modPrev)

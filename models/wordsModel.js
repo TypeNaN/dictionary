@@ -225,7 +225,7 @@ const addPrev = async (req, res) => {
     return res.status(304).end()
   }
   if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
     const newDoc = await doc.save()
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
     return res.json(newDoc)
@@ -260,7 +260,7 @@ const modPrev = async (req, res) => {
   }
   if (!docA.get(`tree.${edit}`)) {
     if (!docA.get(`tree.${previous}`)) {
-      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
     } else {
       const treeA = docA.get('tree')
       await docA.$set(`tree.${edit}`, treeA[previous])
@@ -270,7 +270,7 @@ const modPrev = async (req, res) => {
   } else {
     if (!docA.get(`tree.${previous}`)) {
       if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
         await docA.$set(`tree.${previous}`, undefined, { strict: true })
         await docA.save()
         console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
@@ -280,7 +280,7 @@ const modPrev = async (req, res) => {
       return res.status(304).end()
     } else {
       if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
       }
       const treeAprev = docA.get(`tree.${previous}`)
       const treeAedit = docA.get(`tree.${edit}`)
@@ -337,10 +337,51 @@ const removePrev = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำถัดไปในคำศัพท์ 1 รายการจาก collection words                              |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const addNext = async (req, res) => {
+  let { by, target, previous, next } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Add word ${next} as next of ${previous} in ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.error(`Can't add word next ${next} to ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}`)) {
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+  }
+  if (!doc.get(`tree.${previous}.${next}`)) {
+    const result = await doc.$set(`tree.${previous}.${next}`, { freq: 1, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
+    const newDoc = await doc.save()
+    return res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
+  }
+  console.error(`Can't add word next ${next} to ${target} because ${next} exist`)
+  res.status(304).end()
+}
+
+
+
 
 module.exports = {
   add,
   addPrev,
+  addNext,
   modPrev,
   patch,
   patchKey,
