@@ -304,6 +304,37 @@ const modPrev = async (req, res) => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลทั้งหมดของคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words               |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const patchPrev = async (req, res) => {
+  const data = req.body
+  let { by, target, previous } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Patch word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.error(`Can't Patch word previous ${previous} of ${by} ${target} from ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  const result = await doc.$set(`tree.${previous}`, data, { strict: true })
+  await doc.save()
+  console.log(`Patch word previous ${previous} of ${by} ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+  res.json(result.get(`tree.${previous}`))
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
 // └────────────────────────────────────────────────────────────────────────────┘
 
@@ -385,6 +416,7 @@ module.exports = {
   modPrev,
   patch,
   patchKey,
+  patchPrev,
   removePrev,
   remove,
   search,

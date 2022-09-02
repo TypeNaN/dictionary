@@ -234,6 +234,7 @@ app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modP
 
 app.put('/patch/:by/:target', checkCore, words.patch)
 app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
+app.put('/patch/prev/:by/:target/:previous', checkCore, words.patchPrev)
 
 app.delete('/remove/:by/:target', checkCore, words.remove)
 app.delete('/remove/prev/:by/:target/:previous', checkCore, words.removePrev)
