@@ -231,6 +231,7 @@ app.get('/add/next/:by/:target/:previous/:next', checkCore, words.addNext)
 
 app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.modPrev)
 app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modPrev)
+app.get('/modify/next/:by/:target/:previous/:next/:edit', checkCore, words.modNext)
 
 app.put('/patch/:by/:target', checkCore, words.patch)
 app.put('/patch/:by/:target/:key', checkCore, words.patchKey)

@@ -408,6 +408,71 @@ const addNext = async (req, res) => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขคำถัดไปในคำศัพท์ 1 รายการจาก collection words                             |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const modNext = async (req, res) => {
+  let { by, target, previous, next, edit } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  edit = remove_spacails(decodeURIComponent(edit))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Modify word ${next} as next of ${previous} in ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const docA = await words.findOne(fillter).catch((err) => err)
+  if (docA && 'message' in docA) {
+    console.error(docA)
+    return res.status(500).send(docA.message)
+  }
+  if (!docA) {
+    console.error(`Can't Modify word next ${next} of ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!docA.get(`tree.${previous}`)) {
+    const result = await docA.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+  }
+
+  if (!docA.get(`tree.${previous}.${next}`)) {
+    await docA.$set(`tree.${previous}.${next}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully`)
+  }
+
+  const docB = await words.findOne({ name: edit }).catch((err) => err)
+  if (docB && 'message' in docB) {
+    console.error(docB)
+    return res.status(500).send(docB.message)
+  }
+
+  if (!docB) {
+    console.log('add', edit)
+    const created = await words.create({ name: edit }).catch((err) => err)
+    if (created && 'message' in created) {
+      console.error(created)
+      return res.status(500).send(created.message)
+    }
+    if (!created) return res.status(304).end()
+  }
+
+  if (!docA.get(`tree.${previous}.${edit}`)) {
+    await docA.$set(`tree.${previous}.${edit}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+  }
+
+  const nxt = Object.assign({}, docA.get(`tree.${previous}.${next}`))
+  const merge = Object.assign({}, docA.get(`tree.${previous}.${edit}`), nxt)
+  await docA.$set(`tree.${previous}.${next}`, undefined, { strict: true })
+  await docA.$set(`tree.${previous}.${edit}`, merge, { strict: true })
+  await docA.save()
+  console.log(`Add word next ${next} to ${edit} successfully`)
+  res.json({ [previous]: { [edit]: docA.get(`tree.${previous}.${edit}`) } })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
 // └────────────────────────────────────────────────────────────────────────────┘
 
@@ -443,14 +508,12 @@ const patchNext = async (req, res) => {
 }
 
 
-
-
-
 module.exports = {
   add,
   addPrev,
   addNext,
   modPrev,
+  modNext,
   patch,
   patchKey,
   patchPrev,
