@@ -407,6 +407,43 @@ const addNext = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const patchNext = async (req, res) => {
+  const data = req.body
+  let { by, target, previous, next } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Patch word next ${next} of ${previous} in ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.error(`Can't patch word next ${next} to ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}`)) {
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+  }
+  const result = await doc.$set(`tree.${previous}.${next}`, data, { strict: true })
+  console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
+  const newDoc = await doc.save()
+  res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
+}
+
+
+
 
 
 module.exports = {
@@ -417,6 +454,7 @@ module.exports = {
   patch,
   patchKey,
   patchPrev,
+  patchNext,
   removePrev,
   remove,
   search,
