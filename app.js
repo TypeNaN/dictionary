@@ -111,7 +111,6 @@ db.on('error', console.error.bind(console, 'mongoose connection error:'))
 db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
 
 const logFile = fs.createWriteStream('app.log', { flags: 'a' })
-// Or 'w' to truncate the file every time the process starts.
 
 new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
   const originalMethod = console[methodName]
@@ -210,15 +209,11 @@ const checkCore = async (req, res, next) => {
   next()
 }
 
-const test = async (req, res) => {
-  res.json({
-    route: req.route.path,
-    url: req.url,
-    params: req.params
-  })
-}
-
-app.get('/', checkCore, test)
+app.get('/', checkCore, (req, res) => {
+  res.sendFile('index.html')
+  res.status(200).send('complete')
+  res.end()
+})
 
 app.get('/views', checkCore, words.views)
 app.get('/view/:by/:target', checkCore, words.view)
@@ -252,13 +247,13 @@ io.on('connection', (socket) => {
   socket.broadcast.emit(`Hi, I am ${socket.id}`)
 
   socket.on('message', (data) => {
-    console.log('socket', socket.id, 'message', data)
-    socket.emit('message', `${socket.id} | ${data}`)
+    console.log('socket', socket.id, 'message', JSON.stringify(data))
+    socket.emit('message', `${socket.id} | ${JSON.stringify(data) }`)
   })
 
   socket.on('req-test', (data) => {
-    console.log('socket', socket.id, 'req-test', data)
-    socket.emit('res-word', `${socket.id} | ${data}`)
+    console.log('socket', socket.id, 'req-test', JSON.stringify(data))
+    socket.emit('res-word', `${socket.id} | ${JSON.stringify(data) }`)
   })
 
   socket.on('close', () => console.log('socket', socket.id, 'closed'))
@@ -308,8 +303,8 @@ const exitHandler = (options, err) => {
 * ${dtt(new Date())}
 * รวมเวลา ${runtime(born)}
 ******************************************************************************\n\n`)
-        console.error(err)
       }
+      console.error(err)
     }
   }
   if (options.cleanup) {

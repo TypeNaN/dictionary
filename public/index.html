@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="th" lang="th">
+
+<head>
+  <title>Dictionary</title>
+  <meta http-equiv="content-type" content="text/html" charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ระบบจัดการพจนานุกรม">
+  
+  <link async rel="shortcut icon" type="images/png" sizes="32x32" href="/assets/favicon.png">
+  <link defer rel="stylesheet" href="/css/index.css">
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script defer>
+    const socket = io()
+    socket.emit('req-test', { name:'ก้าง' })
+    socket.on('res-word', (data) => {
+      console.log(data)
+    })
+  </script>
+  <script defer rel="modulepreload" type="module" src="/mjs/index.mjs" charset="utf-8"></script>
+</head>
+
+<body>
+  <noscript>
+    <h1>กรุณาเปิด JavaScript</h1>
+    <h3>เพื่อให้หน้าเว็บแสดงอย่างถูกต้อง</h3>
+  </noscript>
+  <div id="main-container"></div>
+</body>
+
+</html>
