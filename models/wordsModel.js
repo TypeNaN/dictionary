@@ -508,6 +508,45 @@ const patchNext = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำถัดไปในคำศัพท์ 1 รายการจาก collection words                               |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const removeNext = async (req, res) => {
+  let { by, target, previous, next } = req.params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    console.error(`Remove word next ${next} in ${by} ${target} status code ${fillter.statusCode}`)
+    return res.status(fillter.statusCode).end()
+  }
+  const doc = await words.findOne(fillter).then((doc) => doc).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.error(`Can't remove word next ${next} from ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}`)) {
+    console.error(`Can't remove word next ${next} from ${target} because previous ${previous} don't exist`)
+    return res.status(304).end()
+  }
+  if (!doc.get(`tree.${previous}.${next}`)) {
+    console.error(`Can't remove word next ${next} from ${target} because next ${next} don't exist`)
+    return res.status(304).end()
+  }
+  const result = await doc.$set(`tree.${previous}.${next}`, undefined, { strict: true })
+  await doc.save()
+  console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
+  res.json({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })
+}
+
+
 module.exports = {
   add,
   addPrev,
@@ -518,8 +557,9 @@ module.exports = {
   patchKey,
   patchPrev,
   patchNext,
-  removePrev,
   remove,
+  removePrev,
+  removeNext,
   search,
   views,
   view

@@ -240,6 +240,7 @@ app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.patchNext)
 
 app.delete('/remove/:by/:target', checkCore, words.remove)
 app.delete('/remove/prev/:by/:target/:previous', checkCore, words.removePrev)
+app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.removeNext)
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
