@@ -1,3 +1,5 @@
 'use strict'
 
-document.addEventListener('DOMContentLoaded', () => console.log(window.location.pathname))
+import router from './router.mjs'
+
+document.addEventListener('DOMContentLoaded', async () => await router(window.location.pathname))

@@ -7,17 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="ระบบจัดการพจนานุกรม">
   
-  <link async rel="shortcut icon" type="images/png" sizes="32x32" href="/assets/favicon.png">
-  <link defer rel="stylesheet" href="/css/index.css">
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script defer>
-    const socket = io()
-    socket.emit('req-test', { name:'ก้าง' })
-    socket.on('res-word', (data) => {
-      console.log(data)
-    })
-  </script>
+  <link async rel="stylesheet" href="/css/index.css">
+  <link async rel="stylesheet" href="/css/navMain.css">
+  
+  <script rel="dns-prefetch" src="/socket.io/socket.io.js"></script>
   <script defer rel="modulepreload" type="module" src="/mjs/index.mjs" charset="utf-8"></script>
 </head>
 
