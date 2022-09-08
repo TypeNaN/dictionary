@@ -1,10 +1,12 @@
 const mongoose = require('mongoose')
 
 const collection = 'words'
+const collection_stat = 'statistics'
 
 const wordsSchema = new mongoose.Schema({
   create    : { type: Number, default: 0 },                   // เวลาที่ถูกสร้าง
   modified  : { type: Number, default: 0 },                   // เวลาที่แก้ไขล่าสุด
+  populate  : { type: Number, default: 0 },                   // จำนวนครั้งที่ถูกใช้
   lang      : { type: String, default: 'th' },                // TH,EN
   age       : { type: String, default: 'ทั่วไป' },              // โบราณ, ทั่วไป, ทับศัพท์, กระแสนิยม
   name      : { type: String, required: true, unique: true }, // ชื่อคำ
@@ -39,7 +41,27 @@ const wordsSchema = new mongoose.Schema({
   collection
 })
 
+const wordsStat = new mongoose.Schema({
+  create  : { type: Number, default: 0 },
+  populate: { type: Number, default: 0 },
+  name    : { type: String, required: true, unique: true},
+  previous: { type: [String], default: [] },
+  next    : { type: [String], default: [] }
+})
+
+const statSchema = new mongoose.Schema({
+  total   : { type: Number, default: 0 },
+  first   : { type: wordsStat },
+  last    : { type: wordsStat },
+},
+{
+  versionKey: false,
+  strict: true,
+  collection_stat
+})
+
 const words = mongoose.model(collection, wordsSchema)
+const statistics = mongoose.model(collection_stat, statSchema)
 
 const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"\\|,.<>/?]/g, '')
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
@@ -547,6 +569,69 @@ const removeNext = async (req, res) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูสรุปคำศัพท์ทั้งหมดจาก collection statistics                                |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const stat = async (req, res) => {
+  const doc = await statistics.findOne().catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+    if (first && 'message' in first) {
+      console.error(first)
+      return res.status(500).send(first.message)
+    }
+    if (!first) {
+      console.log('Dictionary is empty')
+      return res.status(304).end()
+    }
+    const last = await words.findOne().sort({ modified: 'desc' }).catch((err) => err)
+    if (last && 'message' in last) {
+      console.error(last)
+      return res.status(500).send(last.message)
+    }
+    if (!last) {
+      console.log('Dictionary is empty')
+      return res.status(304).end()
+    }
+    const all = await words.find().catch((err) => err)
+    if (all && 'message' in all) {
+      console.error(all)
+      return res.status(500).send(all.message)
+    }
+    const data = {
+      total: all.length,
+      first: {
+        create  : first.get('create'),
+        populate: first.get('populate'),
+        name    : first.get('name'),
+        previous: Object.keys(first.get(`tree`)),
+        next    : Object.keys(first.get(`tree.${' '}`))
+      },
+      last: {
+        create  : last.get('create'),
+        populate: last.get('populate'),
+        name    : last.get('name'),
+        previous: Object.keys(last.get(`tree`)),
+        next    : Object.keys(last.get(`tree.${' '}`))
+      }
+    }
+    return await statistics.create(data).then((result) => {
+      console.log(`Add statistics in to Dictionary`)
+      return res.status(200).send(result)
+    }).catch((err) => {
+      console.error(err)
+      return res.status(500).send(err.message)
+    })
+  }
+  res.status(200).json(doc)
+}
+
+
 module.exports = {
   add,
   addPrev,
@@ -562,5 +647,6 @@ module.exports = {
   removeNext,
   search,
   views,
-  view
+  view,
+  stat
 }

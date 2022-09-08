@@ -215,9 +215,9 @@ app.get('/', checkCore, (req, res) => {
   res.end()
 })
 
+app.get('/stat', checkCore, words.stat)
 app.get('/views', checkCore, words.views)
 app.get('/view/:by/:target', checkCore, words.view)
-
 app.get('/search/:name', checkCore, words.search)
 
 app.get('/add/:name', checkCore, words.add)
