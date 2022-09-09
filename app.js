@@ -3,7 +3,7 @@ const thday = new Array("อาทิตย์", "จันทร์", "อั�
 const thmonth = new Array("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
 const dayofmonth = new Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
-const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} พุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
+const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} ปีพุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
 const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + 543)}-${(d.toLocaleTimeString('TH'))}`
 
 const runtime = (start) => {
@@ -197,15 +197,15 @@ app.use(RateLimit({
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const checkCore = async (req, res, next) => {
-  let isAllow = false
+  let allow = false
   const { hostname } = req
   for (const name of config.whiteHost) {
     if (hostname === name) {
-      isAllow = true
+      allow = true
       break
     }
   }
-  if (!isAllow) return res.status(503).send('เอร๊ย!! ใครอ่ะ')
+  if (!allow) return res.status(503).send('เอร๊ย!! ใครอ่ะ')
   next()
 }
 
@@ -215,7 +215,7 @@ app.get('/', checkCore, (req, res) => {
   res.end()
 })
 
-app.get('/stat', checkCore, words.stat)
+app.get('/statistics', checkCore, words.stat)
 app.get('/views', checkCore, words.views)
 app.get('/view/:by/:target', checkCore, words.view)
 app.get('/search/:name', checkCore, words.search)

@@ -6,7 +6,7 @@ const collection_stat = 'statistics'
 const wordsSchema = new mongoose.Schema({
   create    : { type: Number, default: 0 },                   // เวลาที่ถูกสร้าง
   modified  : { type: Number, default: 0 },                   // เวลาที่แก้ไขล่าสุด
-  populate  : { type: Number, default: 0 },                   // จำนวนครั้งที่ถูกใช้
+  counter   : { type: Number, default: 0 },                   // จำนวนครั้งที่ถูกใช้
   lang      : { type: String, default: 'th' },                // TH,EN
   age       : { type: String, default: 'ทั่วไป' },              // โบราณ, ทั่วไป, ทับศัพท์, กระแสนิยม
   name      : { type: String, required: true, unique: true }, // ชื่อคำ
@@ -44,7 +44,7 @@ const wordsSchema = new mongoose.Schema({
 const wordsStat = new mongoose.Schema({
   create  : { type: Number, default: 0 },
   modified: { type: Number, default: 0 },
-  populate: { type: Number, default: 0 },
+  counter : { type: Number, default: 0 },
   name    : { type: String, required: true, unique: true},
   previous: { type: [String], default: [] },
   next    : { type: [String], default: [] }
@@ -56,6 +56,8 @@ const statSchema = new mongoose.Schema({
   lastAdd : { type: [wordsStat] },
   lastMod : { type: [wordsStat] },
   lastDel : { type: [wordsStat] },
+  lastHigh: { type: [wordsStat] },
+  lastLow : { type: [wordsStat] },
 },
 {
   versionKey: false,
@@ -259,6 +261,7 @@ const addPrev = async (req, res) => {
   res.status(304).end()
 }
 
+
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
 // └────────────────────────────────────────────────────────────────────────────┘
@@ -461,18 +464,15 @@ const modNext = async (req, res) => {
     const result = await docA.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
   }
-
   if (!docA.get(`tree.${previous}.${next}`)) {
     await docA.$set(`tree.${previous}.${next}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
     console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully`)
   }
-
   const docB = await words.findOne({ name: edit }).catch((err) => err)
   if (docB && 'message' in docB) {
     console.error(docB)
     return res.status(500).send(docB.message)
   }
-
   if (!docB) {
     console.log('add', edit)
     const created = await words.create({ name: edit }).catch((err) => err)
@@ -482,7 +482,6 @@ const modNext = async (req, res) => {
     }
     if (!created) return res.status(304).end()
   }
-
   if (!docA.get(`tree.${previous}.${edit}`)) {
     await docA.$set(`tree.${previous}.${edit}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
   }
@@ -602,42 +601,44 @@ const stat = async (req, res) => {
       console.error(lastMod)
       return res.status(500).send(lastMod.message)
     }
+    const lastHigh = await words.find().sort({ counter: 'desc' }).limit(10).catch((err) => err)
+    if (lastHigh && 'message' in lastHigh) {
+      console.error(lastHigh)
+      return res.status(500).send(lastHigh.message)
+    }
+    const lastLow = await words.find().sort({ counter: 'asc' }).limit(10).catch((err) => err)
+    if (lastLow && 'message' in lastLow) {
+      console.error(lastLow)
+      return res.status(500).send(lastLow.message)
+    }
     const all = await words.find().catch((err) => err)
     if (all && 'message' in all) {
       console.error(all)
       return res.status(500).send(all.message)
     }
+    const struct = (d) => Array.from(d.map((chunk) => ({
+      create  : chunk.get('create'),
+      modified: chunk.get('modified'),
+      counter : chunk.get('counter'),
+      name    : chunk.get('name'),
+      previous: Object.keys(chunk.get(`tree`)),
+      next    : Object.keys(chunk.get(`tree.${' '}`))
+    })))
     const data = {
-      total: all.length,
-      first: {
+      total   : all.length,
+      first   : {
         create  : first.get('create'),
         modified: first.get('modified'),
-        populate: first.get('populate'),
+        counter : first.get('counter'),
         name    : first.get('name'),
         previous: Object.keys(first.get(`tree`)),
         next    : Object.keys(first.get(`tree.${' '}`))
       },
-      lastAdd: Array.from(lastAdd.map((chunk)=>{
-        return {
-          create  : chunk.get('create'),
-          modified: chunk.get('modified'),
-          populate: chunk.get('populate'),
-          name    : chunk.get('name'),
-          previous: Object.keys(chunk.get(`tree`)),
-          next    : Object.keys(chunk.get(`tree.${' '}`))
-        }
-      })),
-      lastMod: Array.from(lastMod.map((chunk)=>{
-        return {
-          create  : chunk.get('create'),
-          modified: chunk.get('modified'),
-          populate: chunk.get('populate'),
-          name    : chunk.get('name'),
-          previous: Object.keys(chunk.get(`tree`)),
-          next    : Object.keys(chunk.get(`tree.${' '}`))
-        }
-      })),
-      lastDel: []
+      lastAdd : struct(lastAdd),
+      lastMod : struct(lastMod),
+      lastDel : [],
+      lastHigh: struct(lastHigh),
+      lastLow : struct(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
     if (result && 'message' in result) {
@@ -645,49 +646,32 @@ const stat = async (req, res) => {
       return res.status(500).send(result.message)
     }
     console.log(`Add statistics in to Dictionary`)
-    res.status(200).json(data)
+    return res.status(200).json(data)
   }
 
+  const struct = (d) => Array.from(d.map((chunk) => ({
+    create  : chunk.create,
+    modified: chunk.modified,
+    counter : chunk.counter,
+    name    : chunk.name,
+    previous: chunk.previous,
+    next    : chunk.next
+  })))
   const data = {
     total: doc.get('total'),
     first: {
       create  : doc.get('first.create'),
       modified: doc.get('first.modified'),
-      populate: doc.get('first.populate'),
+      counter : doc.get('first.counter'),
       name    : doc.get('first.name'),
       previous: doc.get('first.previous'),
       next    : doc.get('first.next')
     },
-    lastAdd: Array.from(doc.get('lastAdd').map((chunk) => {
-      return {
-        create:   chunk.create,
-        modified: chunk.modified,
-        populate: chunk.populate,
-        name    : chunk.name,
-        previous: chunk.previous,
-        next    : chunk.next
-      }
-    })),
-    lastMod: Array.from(doc.get('lastMod').map((chunk) => {
-      return {
-        create:   chunk.create,
-        modified: chunk.modified,
-        populate: chunk.populate,
-        name    : chunk.name,
-        previous: chunk.previous,
-        next    : chunk.next
-      }
-    })),
-    lastDel: Array.from(doc.get('lastDel').map((chunk) => {
-      return {
-        create:   chunk.create,
-        modified: chunk.modified,
-        populate: chunk.populate,
-        name    : chunk.name,
-        previous: chunk.previous,
-        next    : chunk.next
-      }
-    }))
+    lastAdd : struct(doc.get('lastAdd')),
+    lastMod : struct(doc.get('lastMod')),
+    lastDel : struct(doc.get('lastDel')),
+    lastHigh: struct(doc.get('lastHigh')),
+    lastLow : struct(doc.get('lastLow'))
   }
   res.status(200).json(data)
 }
