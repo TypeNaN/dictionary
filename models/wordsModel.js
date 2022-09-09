@@ -72,6 +72,24 @@ const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
 const hline = '\n────────────────────────────────────────────────────────────────────────────────\n'
 
+const extract_doc = (data) => Array.from(data.map((chunk) => ({
+  create  : chunk.get('create'),
+  modified: chunk.get('modified'),
+  counter : chunk.get('counter'),
+  name    : chunk.get('name'),
+  previous: Object.keys(chunk.get(`tree`)),
+  next    : Object.keys(chunk.get(`tree.${' '}`))
+})))
+
+const extract_field = (data) => Array.from(data.map((chunk) => ({
+  create  : chunk.create,
+  modified: chunk.modified,
+  counter : chunk.counter,
+  name    : chunk.name,
+  previous: chunk.previous,
+  next    : chunk.next
+})))
+
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เพิ่มคำศัพท์ลงใน collection words                                              |
@@ -80,17 +98,87 @@ const hline = '\n─────────────────────
 const add = async (req, res) => {
   let { name } = req.params
   name = remove_spacails(decodeURIComponent(name))
-  words.create({ name: name }).then((result) => {
-    console.log(`Add word ${name} in to Dictionary`)
-    res.status(200).send(result)
-  }).catch((err) => {
-    if (err.message.startsWith('E11000 duplicate key error collection')) {
+  const doc = await words.create({ name: name }).catch((err) => err)
+  if (doc && 'message' in doc) {
+    if (doc.message.startsWith('E11000 duplicate key error collection')) {
       console.log(`Can't add word ${name} in to Dictionary ${name} is exist`)
       return res.status(304).end()
     }
-    console.error(err)
-    return res.status(500).send(err.message)
-  })
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  console.log(`Add word ${name} in to Dictionary`)
+  const stat = await statistics.findOne().catch((err) => err)
+  if (stat && 'message' in stat) {
+    console.error(stat)
+    return res.status(500).send(stat.message)
+  }
+  const lastAdd = await words.find().sort({ create: 'desc' }).limit(10).catch((err) => err)
+  if (lastAdd && 'message' in lastAdd) {
+    console.error(lastAdd)
+    return res.status(500).send(lastAdd.message)
+  }
+  const lastMod = await words.find().sort({ modified: 'desc' }).limit(10).catch((err) => err)
+  if (lastMod && 'message' in lastMod) {
+    console.error(lastMod)
+    return res.status(500).send(lastMod.message)
+  }
+  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(10).catch((err) => err)
+  if (lastHigh && 'message' in lastHigh) {
+    console.error(lastHigh)
+    return res.status(500).send(lastHigh.message)
+  }
+  const lastLow = await words.find().sort({ counter: 'asc' }).limit(10).catch((err) => err)
+  if (lastLow && 'message' in lastLow) {
+    console.error(lastLow)
+    return res.status(500).send(lastLow.message)
+  }
+  if (!stat) {
+    const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+    if (first && 'message' in first) {
+      console.error(first)
+      return res.status(500).send(first.message)
+    }
+    if (!first) {
+      console.log('Dictionary is empty')
+      return res.status(304).end()
+    }
+    const all = await words.find().catch((err) => err)
+    if (all && 'message' in all) {
+      console.error(all)
+      return res.status(500).send(all.message)
+    }
+    const data = {
+      total   : all.length,
+      first   : {
+        create  : first.get('create'),
+        modified: first.get('modified'),
+        counter : first.get('counter'),
+        name    : first.get('name'),
+        previous: Object.keys(first.get(`tree`)),
+        next    : Object.keys(first.get(`tree.${' '}`))
+      },
+      lastAdd : extract_doc(lastAdd),
+      lastMod : extract_doc(lastMod),
+      lastDel : [],
+      lastHigh: extract_doc(lastHigh),
+      lastLow : extract_doc(lastLow)
+    }
+    const result = await statistics.create(data).catch((err) => err)
+    if (result && 'message' in result) {
+      console.error(result)
+      return res.status(500).send(result.message)
+    }
+    console.log(`Add statistics in to Dictionary`)
+    return res.status(200).json(doc)
+  }
+  await stat.$set('total', parseInt(stat.get('total')) + 1, { strict: true })
+  await stat.$set('lastAdd', extract_doc(lastAdd), { strict: true })
+  await stat.$set('lastMod', extract_doc(lastMod), { strict: true })
+  await stat.$set('lastHigh', extract_doc(lastHigh), { strict: true })
+  await stat.$set('lastLow', extract_doc(lastLow), { strict: true })
+  await stat.save()
+  res.status(200).json(doc)
 }
 
 
@@ -162,13 +250,42 @@ const remove = async (req, res) => {
     console.error(`Remove word by ${by} ${target} status code ${fillter.statusCode}`)
     return res.status(fillter.statusCode).end()
   }
-  words.deleteOne(fillter).then((result) => {
-    console.log(`Remove word by ${by} ${target} deleted count ${result.deletedCount}`)
-    res.status(200).json(result)
-  }).catch ((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) {
+    console.error(doc)
+    return res.status(500).send(doc.message)
+  }
+  if (!doc) {
+    console.log(`Can't remove word ${target} because ${target} don't exist`)
+    return res.status(304).end()
+  }
+  const data = {
+    create  : doc.create,
+    modified: doc.modified,
+    counter : doc.counter,
+    name    : doc.name,
+    previous: Object.keys(doc.tree),
+    next    : Object.keys(doc.tree[' '])
+  }
+  const del = await words.deleteOne(fillter, {rawResult: true}).catch((err) => err)
+  if (del && 'message' in del) {
+    return res.status(500).send(del.message)
+  }
+  if ('deletedCount' in del) {
+    if (del.deletedCount > 0) {
+      console.log(`Remove word ${target}`)
+      const stat = await statistics.findOne().catch((err) => err)
+      if (stat && 'message' in stat) {
+        console.error(stat)
+        return res.status(500).send(stat.message)
+      }
+      if (stat.lastDel.length > 9) await stat.lastDel.pull(stat.lastDel[9])
+      await stat.lastDel.push(data)
+      await stat.lastDel.sort((a, b) => b.modified - a.modified)
+      await stat.save()
+    }
+  }
+  res.status(200).json(del)
 }
 
 
@@ -616,7 +733,7 @@ const stat = async (req, res) => {
       console.error(all)
       return res.status(500).send(all.message)
     }
-    const struct = (d) => Array.from(d.map((chunk) => ({
+    const extract_doc = (d) => Array.from(d.map((chunk) => ({
       create  : chunk.get('create'),
       modified: chunk.get('modified'),
       counter : chunk.get('counter'),
@@ -634,11 +751,11 @@ const stat = async (req, res) => {
         previous: Object.keys(first.get(`tree`)),
         next    : Object.keys(first.get(`tree.${' '}`))
       },
-      lastAdd : struct(lastAdd),
-      lastMod : struct(lastMod),
+      lastAdd : extract_doc(lastAdd),
+      lastMod : extract_doc(lastMod),
       lastDel : [],
-      lastHigh: struct(lastHigh),
-      lastLow : struct(lastLow)
+      lastHigh: extract_doc(lastHigh),
+      lastLow : extract_doc(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
     if (result && 'message' in result) {
@@ -648,15 +765,6 @@ const stat = async (req, res) => {
     console.log(`Add statistics in to Dictionary`)
     return res.status(200).json(data)
   }
-
-  const struct = (d) => Array.from(d.map((chunk) => ({
-    create  : chunk.create,
-    modified: chunk.modified,
-    counter : chunk.counter,
-    name    : chunk.name,
-    previous: chunk.previous,
-    next    : chunk.next
-  })))
   const data = {
     total: doc.get('total'),
     first: {
@@ -667,11 +775,11 @@ const stat = async (req, res) => {
       previous: doc.get('first.previous'),
       next    : doc.get('first.next')
     },
-    lastAdd : struct(doc.get('lastAdd')),
-    lastMod : struct(doc.get('lastMod')),
-    lastDel : struct(doc.get('lastDel')),
-    lastHigh: struct(doc.get('lastHigh')),
-    lastLow : struct(doc.get('lastLow'))
+    lastAdd : extract_field(doc.get('lastAdd')),
+    lastMod : extract_field(doc.get('lastMod')),
+    lastDel : extract_field(doc.get('lastDel')),
+    lastHigh: extract_field(doc.get('lastHigh')),
+    lastLow : extract_field(doc.get('lastLow'))
   }
   res.status(200).json(data)
 }
