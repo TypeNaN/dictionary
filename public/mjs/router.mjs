@@ -1,7 +1,8 @@
 'use strict'
 
-import dashboard from './dashboard.mjs'
+import dashboard from './dashboard/dashboard.mjs'
 import page404 from './404.mjs'
+
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ Load script /socket.io/socket.io.js from index.html                        |
@@ -9,24 +10,23 @@ import page404 from './404.mjs'
 
 const socket = io()
 
+
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ SPA location                                                               |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const pathToRegex = (path) => new RegExp(`^${path.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/:(\w+)/g, '(?<$1>[^/]+)')}\/?$`)
+const getRoute = (path) => new RegExp(`^${path.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/:(\w+)/g, '(?<$1>[^/]+)')}\/?$`)
 
 const getParams = (match) => {
-  const values = match.result.slice(1)
-  if (values.length > 0) {
-    const keys = Array.from(match.route.path.matchAll(/:(\w+)/g)).map((result) => result[1])
-    return Object.fromEntries(keys.map((key, i) => [key, values[i]]))
-  }
-  return []
+  const v = match.result.slice(1)
+  if (v.length < 1) return []
+  const keys = Array.from(match.route.path.matchAll(/:(\w+)/g)).map((r) => r[1])
+  return Object.fromEntries(keys.map((k, i) => [k, v[i]]))
 }
 
 const getUrlquery = () => {
   const urlquery = {}
-  window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (m, key, value) => urlquery[key] = value)
+  window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (m, k, v) => urlquery[k] = v)
   return urlquery
 }
 
@@ -41,8 +41,8 @@ const router = async (path = '/', query) => {
     { path: '/dashboard', view: dashboard },
     { path: '/:another', view: page404 }
   ]
-  const potentialMatches = routes.map((route) => ({ route: route, result: path.match(pathToRegex(route.path)) }))
-  const match = potentialMatches.find((potentialMatch) => potentialMatch.result !== null) || { route: routes[0], result: [path] }
+  const matches = routes.map((route) => ({ route: route, result: path.match(getRoute(route.path)) }))
+  const match = matches.find((m) => m.result !== null) || { route: routes[0], result: [path] }
   const view = new match.route.view(getParams(match), query || getUrlquery())
   return await view.render(socket)
 }

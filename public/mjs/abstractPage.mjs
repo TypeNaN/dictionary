@@ -9,13 +9,13 @@ export default class {
   setTitle = (title) => document.title = title
 
   createPage = (parent) => {
-    const eType = 'section'
-    const header  = document.createElement(eType)
-    const body    = document.createElement(eType)
-    const content = document.createElement(eType)
-    const left    = document.createElement(eType)
-    const right   = document.createElement(eType)
-    const footer  = document.createElement(eType)
+    const tag     = 'section'
+    const header  = document.createElement(tag)
+    const body    = document.createElement(tag)
+    const content = document.createElement(tag)
+    const left    = document.createElement(tag)
+    const right   = document.createElement(tag)
+    const footer  = document.createElement(tag)
 
     header.id     = 'page-header'
     body.id       = 'page-body'

@@ -4,21 +4,25 @@ import router from './router.mjs'
 
 export default class {
   constructor(container) {
+    this.container = container
+  }
+
+  render = async () => {
     this.root = document.createElement('div')
     this.root.id = 'nav-main'
     this.root.setAttribute('toggle-sidebar-expanded', false)
-    
+
     this.ul = document.createElement('ul')
 
     this.toggle('toggle-sidebar')
     this.add({ title: 'Home', class: 'menu-home', href: '/' })
     this.add({ title: 'Dashboard', class: 'menu-dashboard', href: '/dashboard' })
-    
+
     this.root.onclick = this.toggleState
 
-    if (container) {
-      container.appendChild(this.root)
-      container.appendChild(this.ul)
+    if (this.container) {
+      this.container.appendChild(this.root)
+      this.container.appendChild(this.ul)
     }
   }
   

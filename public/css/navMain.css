@@ -1,5 +1,5 @@
 #nav-main {
-  position: absolute;
+  position: fixed;
   margin: 0;
   padding: 0;
   background-color: #222;
@@ -11,6 +11,7 @@
   list-style-type: none;
   background-color: #fff;
   box-shadow: 0 0 20px #eee;
+  
 }
 #page-left ul>li {
   height: 40px;
@@ -22,34 +23,50 @@
   background-size: 40px 40px;
   background-position: left;
 }
-#page-left ul>li:hover {color: #a1fa59;background-color: #343834}
+#page-left ul>li:hover {
+  color: #a1fa59;
+  background-color: #343834
+}
 #page-left ul>li.toggle-sidebar {
-  margin: -7px -7px;
+  margin: -20px -7px;
   padding: 0;
   background-image: url('../assets/toggle-sidebar.svg');
 }
-#page-left ul>li.toggle-sidebar:hover {background-color: transparent}
-#page-left ul>li.menu-home {background-image: url('../assets/menu-home.svg');}
-#page-left ul>li.menu-dashboard {background-image: url('../assets/menu-dashboard.svg');}
-#nav-main[toggle-sidebar-expanded="false"] {
-  left: 20px;
-  top: 80px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  opacity: 0.2;
-  overflow: hidden;
-  transition: all 100ms ease-in-out 300ms;
+#page-left ul>li.toggle-sidebar:hover {
+  background-color: transparent
 }
-#nav-main[toggle-sidebar-expanded="false"]~ul {
-  left: 20px;
-  top: 80px;
+#page-left ul>li.menu-home {
+  background-image: url('../assets/menu-home.svg');
+}
+#page-left ul>li.menu-dashboard {
+  background-image: url('../assets/menu-dashboard.svg');
+}
+#nav-main[toggle-sidebar-expanded="false"] {
+  left: 0;
+  top: 0;
   width: 60px;
-  height: 60px;
-  padding: 18px;
-  border-radius: 50%;
-  overflow: hidden;
+  height: 40px;
+  /* border-radius: 50%; */
   opacity: 0.2;
+  overflow: hidden;
+  transition: left 500ms ease-in-out 300ms,
+    top 500ms ease-in-out 300ms,
+    padding 500ms ease-in-out 300ms,
+    opacity 10000ms ease-in-out 300ms,
+    width 500ms ease-in-out 300ms,
+    height 500ms ease-in-out 300ms,
+    border-radius 5000ms ease-in-out 600ms;
+}
+
+#nav-main[toggle-sidebar-expanded="false"]~ul {
+  left: 0;
+  top: 0;
+  width: 60px;
+  height: 10px;
+  padding: 18px;
+  /* border-radius: 50%; */
+  overflow: hidden;
+  opacity: 1;
   transition: width 100ms ease-in-out 100ms,
     height 100ms ease-in-out 0ms,
     border-radius 100ms ease-in-out 200ms,
@@ -58,6 +75,7 @@
     padding 100ms ease-in-out 200ms,
     opacity 300ms ease-in-out 200ms;
 }
+
 #nav-main[toggle-sidebar-expanded="false"]~ul:hover {
   opacity: 1;
   transition: width 100ms ease-in-out 100ms,
@@ -68,18 +86,26 @@
     padding 100ms ease-in-out 200ms,
     opacity 300ms ease-in-out 0ms;
 }
+
 #nav-main[toggle-sidebar-expanded="true"] {
   left: 0;
   top: 0;
-  width: 100vh;
+  width: 100vw;
   height: 100vh;
   opacity: 0.7;
   overflow: hidden;
-  transition: all 100ms ease-in-out 100ms;
+  transition: left 100ms ease-in-out 0ms,
+    top 100ms ease-in-out 0ms,
+    padding 100ms ease-in-out 0ms,
+    opacity 1000ms ease-in-out 0ms,
+    border-radius 200ms ease-in-out 100ms,
+    height 200ms ease-in-out 100ms,
+    width 500ms ease-in-out 100ms;
 }
+
 #nav-main[toggle-sidebar-expanded="true"]~ul {
   left: 0;
-  top: 20px;
+  top: 20px;;
   width: 280px;
   height: calc(100vh - 40px);
   padding: 78px 38px;
@@ -95,6 +121,97 @@
     padding 100ms ease-in-out 200ms,
     opacity 1000ms ease-in-out 100ms;
 }
-#nav-main[toggle-sidebar-expanded="true"]~ul::-webkit-scrollbar {display: none;}
-#nav-main[toggle-sidebar-expanded="false"] ~ ul>li {content: none;}
-#nav-main[toggle-sidebar-expanded="true"] ~ ul>li {content: initial;}
+
+@media (min-width: 800px) {
+  #page-left ul>li.toggle-sidebar {
+    margin: -7px -7px;
+    padding: 0;
+    background-image: url('../assets/toggle-sidebar.svg');
+  }
+  #nav-main[toggle-sidebar-expanded="false"] {
+    left: 20px;
+    top: 80px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    opacity: 0.2;
+    overflow: hidden;
+    transition: left 500ms ease-in-out 300ms,
+      top 500ms ease-in-out 300ms,
+      padding 500ms ease-in-out 300ms,
+      opacity 10000ms ease-in-out 300ms,
+      width 500ms ease-in-out 300ms,
+      height 500ms ease-in-out 300ms,
+      border-radius 5000ms ease-in-out 600ms;
+  }
+  #nav-main[toggle-sidebar-expanded="false"]~ul {
+    left: 20px;
+    top: 80px;
+    width: 60px;
+    height: 60px;
+    padding: 18px;
+    border-radius: 50%;
+    overflow: hidden;
+    opacity: 0.2;
+    transition: width 100ms ease-in-out 100ms,
+      height 100ms ease-in-out 0ms,
+      border-radius 100ms ease-in-out 200ms,
+      left 100ms ease-in-out 200ms,
+      top 100ms ease-in-out 200ms,
+      padding 100ms ease-in-out 200ms,
+      opacity 300ms ease-in-out 200ms;
+  }
+  #nav-main[toggle-sidebar-expanded="false"]~ul:hover {
+    opacity: 1;
+    transition: width 100ms ease-in-out 100ms,
+      height 100ms ease-in-out 0ms,
+      border-radius 100ms ease-in-out 200ms,
+      left 100ms ease-in-out 200ms,
+      top 100ms ease-in-out 200ms,
+      padding 100ms ease-in-out 200ms,
+      opacity 300ms ease-in-out 0ms;
+  }
+  #nav-main[toggle-sidebar-expanded="true"] {
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0.7;
+    overflow: hidden;
+    transition: left 100ms ease-in-out 0ms,
+      top 100ms ease-in-out 0ms,
+      padding 100ms ease-in-out 0ms,
+      opacity 1000ms ease-in-out 0ms,
+      border-radius 200ms ease-in-out 100ms,
+      height 200ms ease-in-out 100ms,
+      width 500ms ease-in-out 100ms;
+  }
+  #nav-main[toggle-sidebar-expanded="true"]~ul {
+    left: 0;
+    top: 20px;
+    width: 280px;
+    height: calc(100vh - 40px);
+    padding: 78px 38px;
+    border-radius: 0 15px 15px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    opacity: 1;
+    transition: border-radius 200ms ease-in-out 100ms,
+      width 100ms ease-in-out 200ms,
+      height 100ms ease-in-out 300ms,
+      left 100ms ease-in-out 200ms,
+      top 100ms ease-in-out 200ms,
+      padding 100ms ease-in-out 200ms,
+      opacity 1000ms ease-in-out 100ms;
+  }
+}
+
+#nav-main[toggle-sidebar-expanded="true"]~ul::-webkit-scrollbar {
+  display: none;
+}
+#nav-main[toggle-sidebar-expanded="false"]~ul>li {
+  content: none;
+}
+#nav-main[toggle-sidebar-expanded="true"]~ul>li {
+  content: initial;
+}
