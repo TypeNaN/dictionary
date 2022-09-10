@@ -99,7 +99,7 @@ const add = async (req, res) => {
   let { name } = req.params
   name = remove_spacails(decodeURIComponent(name))
   const doc = await words.create({ name: name }).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     if (doc.message.startsWith('E11000 duplicate key error collection')) {
       console.log(`Can't add word ${name} in to Dictionary ${name} is exist`)
       return res.status(304).end()
@@ -109,33 +109,33 @@ const add = async (req, res) => {
   }
   console.log(`Add word ${name} in to Dictionary`)
   const stat = await statistics.findOne().catch((err) => err)
-  if (stat && 'message' in stat) {
+  if ('message' in stat) {
     console.error(stat)
     return res.status(500).send(stat.message)
   }
-  const lastAdd = await words.find().sort({ create: 'desc' }).limit(10).catch((err) => err)
-  if (lastAdd && 'message' in lastAdd) {
+  const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+  if ('message' in lastAdd) {
     console.error(lastAdd)
     return res.status(500).send(lastAdd.message)
   }
-  const lastMod = await words.find().sort({ modified: 'desc' }).limit(10).catch((err) => err)
-  if (lastMod && 'message' in lastMod) {
+  const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+  if ('message' in lastMod) {
     console.error(lastMod)
     return res.status(500).send(lastMod.message)
   }
-  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(10).catch((err) => err)
-  if (lastHigh && 'message' in lastHigh) {
+  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+  if ('message' in lastHigh) {
     console.error(lastHigh)
     return res.status(500).send(lastHigh.message)
   }
-  const lastLow = await words.find().sort({ counter: 'asc' }).limit(10).catch((err) => err)
-  if (lastLow && 'message' in lastLow) {
+  const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+  if ('message' in lastLow) {
     console.error(lastLow)
     return res.status(500).send(lastLow.message)
   }
   if (!stat) {
     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if (first && 'message' in first) {
+    if ('message' in first) {
       console.error(first)
       return res.status(500).send(first.message)
     }
@@ -144,7 +144,7 @@ const add = async (req, res) => {
       return res.status(304).end()
     }
     const all = await words.find().catch((err) => err)
-    if (all && 'message' in all) {
+    if ('message' in all) {
       console.error(all)
       return res.status(500).send(all.message)
     }
@@ -165,18 +165,18 @@ const add = async (req, res) => {
       lastLow : extract_doc(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
-    if (result && 'message' in result) {
+    if ('message' in result) {
       console.error(result)
       return res.status(500).send(result.message)
     }
     console.log(`Add statistics in to Dictionary`)
     return res.status(200).json(doc)
   }
-  await stat.$set('total', parseInt(stat.get('total')) + 1, { strict: true })
-  await stat.$set('lastAdd', extract_doc(lastAdd), { strict: true })
-  await stat.$set('lastMod', extract_doc(lastMod), { strict: true })
-  await stat.$set('lastHigh', extract_doc(lastHigh), { strict: true })
-  await stat.$set('lastLow', extract_doc(lastLow), { strict: true })
+  await stat.$set('total', parseInt(stat.get('total')) + 1)
+  await stat.$set('lastAdd', extract_doc(lastAdd))
+  await stat.$set('lastMod', extract_doc(lastMod))
+  await stat.$set('lastHigh', extract_doc(lastHigh))
+  await stat.$set('lastLow', extract_doc(lastLow))
   await stat.save()
   res.status(200).json(doc)
 }
@@ -251,7 +251,7 @@ const remove = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -268,18 +268,18 @@ const remove = async (req, res) => {
     next    : Object.keys(doc.tree[' '])
   }
   const del = await words.deleteOne(fillter, {rawResult: true}).catch((err) => err)
-  if (del && 'message' in del) {
+  if ('message' in del) {
     return res.status(500).send(del.message)
   }
   if ('deletedCount' in del) {
     if (del.deletedCount > 0) {
       console.log(`Remove word ${target}`)
       const stat = await statistics.findOne().catch((err) => err)
-      if (stat && 'message' in stat) {
+      if ('message' in stat) {
         console.error(stat)
         return res.status(500).send(stat.message)
       }
-      if (stat.lastDel.length > 9) await stat.lastDel.pull(stat.lastDel[9])
+      if (stat.lastDel.length > 99) await stat.lastDel.pull(stat.lastDel[99])
       await stat.lastDel.push(data)
       await stat.lastDel.sort((a, b) => b.modified - a.modified)
       await stat.save()
@@ -360,7 +360,7 @@ const addPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -369,7 +369,7 @@ const addPrev = async (req, res) => {
     return res.status(304).end()
   }
   if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     const newDoc = await doc.save()
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
     return res.json(newDoc)
@@ -395,7 +395,7 @@ const modPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const docA = await words.findOne(fillter).catch((err) => err)
-  if (docA && 'message' in docA) {
+  if ('message' in docA) {
     console.error(docA)
     return res.status(500).send(docA.message)
   }
@@ -405,18 +405,18 @@ const modPrev = async (req, res) => {
   }
   if (!docA.get(`tree.${edit}`)) {
     if (!docA.get(`tree.${previous}`)) {
-      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     } else {
       const treeA = docA.get('tree')
       await docA.$set(`tree.${edit}`, treeA[previous])
-      await docA.$set(`tree.${previous}`, undefined, { strict: true })
+      await docA.$set(`tree.${previous}`, undefined)
     }
     await docA.save()
   } else {
     if (!docA.get(`tree.${previous}`)) {
       if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
-        await docA.$set(`tree.${previous}`, undefined, { strict: true })
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+        await docA.$set(`tree.${previous}`, undefined)
         await docA.save()
         console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
         return res.json(docA.tree)
@@ -425,7 +425,7 @@ const modPrev = async (req, res) => {
       return res.status(304).end()
     } else {
       if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
       }
       const treeAprev = docA.get(`tree.${previous}`)
       const treeAedit = docA.get(`tree.${edit}`)
@@ -439,7 +439,7 @@ const modPrev = async (req, res) => {
           }
         })
       }
-      await docA.$set(`tree.${previous}`, undefined, { strict: true })
+      await docA.$set(`tree.${previous}`, undefined)
       await docA.save()
     }
   }
@@ -464,7 +464,7 @@ const patchPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -472,7 +472,7 @@ const patchPrev = async (req, res) => {
     console.error(`Can't Patch word previous ${previous} of ${by} ${target} from ${target} because ${target} don't exist`)
     return res.status(304).end()
   }
-  const result = await doc.$set(`tree.${previous}`, data, { strict: true })
+  const result = await doc.$set(`tree.${previous}`, data)
   await doc.save()
   console.log(`Patch word previous ${previous} of ${by} ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
   res.json(result.get(`tree.${previous}`))
@@ -494,7 +494,7 @@ const removePrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -503,7 +503,7 @@ const removePrev = async (req, res) => {
     return res.status(304).end()
   }
   if (doc.get(`tree.${previous}`)) {
-    await doc.$set(`tree.${previous}`, undefined, { strict: true })
+    await doc.$set(`tree.${previous}`, undefined)
     console.log(`Remove word previous ${previous} from ${target} successfully`)
     const newDoc = await doc.save()
     return res.json(newDoc)
@@ -529,7 +529,7 @@ const addNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -538,11 +538,11 @@ const addNext = async (req, res) => {
     return res.status(304).end()
   }
   if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
   }
   if (!doc.get(`tree.${previous}.${next}`)) {
-    const result = await doc.$set(`tree.${previous}.${next}`, { freq: 1, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    const result = await doc.$set(`tree.${previous}.${next}`, { freq: 1, feel: 0, type: '', posi: '', mean: '' })
     console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
     const newDoc = await doc.save()
     return res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
@@ -569,7 +569,7 @@ const modNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const docA = await words.findOne(fillter).catch((err) => err)
-  if (docA && 'message' in docA) {
+  if ('message' in docA) {
     console.error(docA)
     return res.status(500).send(docA.message)
   }
@@ -578,35 +578,35 @@ const modNext = async (req, res) => {
     return res.status(304).end()
   }
   if (!docA.get(`tree.${previous}`)) {
-    const result = await docA.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    const result = await docA.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
   }
   if (!docA.get(`tree.${previous}.${next}`)) {
-    await docA.$set(`tree.${previous}.${next}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    await docA.$set(`tree.${previous}.${next}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully`)
   }
   const docB = await words.findOne({ name: edit }).catch((err) => err)
-  if (docB && 'message' in docB) {
+  if ('message' in docB) {
     console.error(docB)
     return res.status(500).send(docB.message)
   }
   if (!docB) {
     console.log('add', edit)
     const created = await words.create({ name: edit }).catch((err) => err)
-    if (created && 'message' in created) {
+    if ('message' in created) {
       console.error(created)
       return res.status(500).send(created.message)
     }
     if (!created) return res.status(304).end()
   }
   if (!docA.get(`tree.${previous}.${edit}`)) {
-    await docA.$set(`tree.${previous}.${edit}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    await docA.$set(`tree.${previous}.${edit}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
   }
 
   const nxt = Object.assign({}, docA.get(`tree.${previous}.${next}`))
   const merge = Object.assign({}, docA.get(`tree.${previous}.${edit}`), nxt)
-  await docA.$set(`tree.${previous}.${next}`, undefined, { strict: true })
-  await docA.$set(`tree.${previous}.${edit}`, merge, { strict: true })
+  await docA.$set(`tree.${previous}.${next}`, undefined)
+  await docA.$set(`tree.${previous}.${edit}`, merge)
   await docA.save()
   console.log(`Add word next ${next} to ${edit} successfully`)
   res.json({ [previous]: { [edit]: docA.get(`tree.${previous}.${edit}`) } })
@@ -630,7 +630,7 @@ const patchNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -639,10 +639,10 @@ const patchNext = async (req, res) => {
     return res.status(304).end()
   }
   if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }, { strict: true })
+    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
   }
-  const result = await doc.$set(`tree.${previous}.${next}`, data, { strict: true })
+  const result = await doc.$set(`tree.${previous}.${next}`, data)
   console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
   const newDoc = await doc.save()
   res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
@@ -665,7 +665,7 @@ const removeNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).then((doc) => doc).catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -681,7 +681,7 @@ const removeNext = async (req, res) => {
     console.error(`Can't remove word next ${next} from ${target} because next ${next} don't exist`)
     return res.status(304).end()
   }
-  const result = await doc.$set(`tree.${previous}.${next}`, undefined, { strict: true })
+  const result = await doc.$set(`tree.${previous}.${next}`, undefined)
   await doc.save()
   console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
   res.json({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })
@@ -694,13 +694,13 @@ const removeNext = async (req, res) => {
 
 const stat = async (req, res) => {
   const doc = await statistics.findOne().catch((err) => err)
-  if (doc && 'message' in doc) {
+  if ('message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
   if (!doc) {
     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if (first && 'message' in first) {
+    if ('message' in first) {
       console.error(first)
       return res.status(500).send(first.message)
     }
@@ -708,28 +708,28 @@ const stat = async (req, res) => {
       console.log('Dictionary is empty')
       return res.status(304).end()
     }
-    const lastAdd = await words.find().sort({ create: 'desc' }).limit(10).catch((err) => err)
-    if (lastAdd && 'message' in lastAdd) {
+    const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+    if ('message' in lastAdd) {
       console.error(lastAdd)
       return res.status(500).send(lastAdd.message)
     }
-    const lastMod = await words.find().sort({ modified: 'desc' }).limit(10).catch((err) => err)
-    if (lastMod && 'message' in lastMod) {
+    const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+    if ('message' in lastMod) {
       console.error(lastMod)
       return res.status(500).send(lastMod.message)
     }
-    const lastHigh = await words.find().sort({ counter: 'desc' }).limit(10).catch((err) => err)
-    if (lastHigh && 'message' in lastHigh) {
+    const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+    if ('message' in lastHigh) {
       console.error(lastHigh)
       return res.status(500).send(lastHigh.message)
     }
-    const lastLow = await words.find().sort({ counter: 'asc' }).limit(10).catch((err) => err)
-    if (lastLow && 'message' in lastLow) {
+    const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+    if ('message' in lastLow) {
       console.error(lastLow)
       return res.status(500).send(lastLow.message)
     }
     const all = await words.find().catch((err) => err)
-    if (all && 'message' in all) {
+    if ('message' in all) {
       console.error(all)
       return res.status(500).send(all.message)
     }
@@ -758,7 +758,7 @@ const stat = async (req, res) => {
       lastLow : extract_doc(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
-    if (result && 'message' in result) {
+    if ('message' in result) {
       console.error(result)
       return res.status(500).send(result.message)
     }
