@@ -11,7 +11,7 @@
 }
 .statistics-section {
   width: 310px;
-  height: 270px;
+  height: 280px;
   margin: 10px;
   padding: 10px 20px;
   background-color: #aac;
@@ -30,7 +30,7 @@
 }
 .statistics-box {
   width: 100%;
-  max-height: 200px;
+  height: 200px;
   padding: 20px 5px;
   border-radius: 15px;
   background-color: #fff;
@@ -40,7 +40,7 @@
 }
 .statistics-value {
   width: 100%;
-  max-height: 160px;
+  height: 160px;
   background-color: #fff;
   overflow-x: hidden;
   overflow-x: auto;

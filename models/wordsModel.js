@@ -99,7 +99,7 @@ const add = async (req, res) => {
   let { name } = req.params
   name = remove_spacails(decodeURIComponent(name))
   const doc = await words.create({ name: name }).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     if (doc.message.startsWith('E11000 duplicate key error collection')) {
       console.log(`Can't add word ${name} in to Dictionary ${name} is exist`)
       return res.status(304).end()
@@ -109,33 +109,33 @@ const add = async (req, res) => {
   }
   console.log(`Add word ${name} in to Dictionary`)
   const stat = await statistics.findOne().catch((err) => err)
-  if ('message' in stat) {
+  if (stat && 'message' in stat) {
     console.error(stat)
     return res.status(500).send(stat.message)
   }
   const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
-  if ('message' in lastAdd) {
+  if (lastAdd && 'message' in lastAdd) {
     console.error(lastAdd)
     return res.status(500).send(lastAdd.message)
   }
   const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-  if ('message' in lastMod) {
+  if (lastMod && 'message' in lastMod) {
     console.error(lastMod)
     return res.status(500).send(lastMod.message)
   }
   const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
-  if ('message' in lastHigh) {
+  if (lastHigh && 'message' in lastHigh) {
     console.error(lastHigh)
     return res.status(500).send(lastHigh.message)
   }
   const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
-  if ('message' in lastLow) {
+  if (lastLow && 'message' in lastLow) {
     console.error(lastLow)
     return res.status(500).send(lastLow.message)
   }
   if (!stat) {
     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if ('message' in first) {
+    if (first && 'message' in first) {
       console.error(first)
       return res.status(500).send(first.message)
     }
@@ -144,7 +144,7 @@ const add = async (req, res) => {
       return res.status(304).end()
     }
     const all = await words.find().catch((err) => err)
-    if ('message' in all) {
+    if (all && 'message' in all) {
       console.error(all)
       return res.status(500).send(all.message)
     }
@@ -165,7 +165,7 @@ const add = async (req, res) => {
       lastLow : extract_doc(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
-    if ('message' in result) {
+    if (result && 'message' in result) {
       console.error(result)
       return res.status(500).send(result.message)
     }
@@ -251,7 +251,7 @@ const remove = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -268,14 +268,14 @@ const remove = async (req, res) => {
     next    : Object.keys(doc.tree[' '])
   }
   const del = await words.deleteOne(fillter, {rawResult: true}).catch((err) => err)
-  if ('message' in del) {
+  if (del && 'message' in del) {
     return res.status(500).send(del.message)
   }
   if ('deletedCount' in del) {
     if (del.deletedCount > 0) {
       console.log(`Remove word ${target}`)
       const stat = await statistics.findOne().catch((err) => err)
-      if ('message' in stat) {
+      if (stat && 'message' in stat) {
         console.error(stat)
         return res.status(500).send(stat.message)
       }
@@ -360,7 +360,7 @@ const addPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -395,7 +395,7 @@ const modPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const docA = await words.findOne(fillter).catch((err) => err)
-  if ('message' in docA) {
+  if (docA && 'message' in docA) {
     console.error(docA)
     return res.status(500).send(docA.message)
   }
@@ -464,7 +464,7 @@ const patchPrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -494,7 +494,7 @@ const removePrev = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -529,7 +529,7 @@ const addNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -569,7 +569,7 @@ const modNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const docA = await words.findOne(fillter).catch((err) => err)
-  if ('message' in docA) {
+  if (docA && 'message' in docA) {
     console.error(docA)
     return res.status(500).send(docA.message)
   }
@@ -586,14 +586,14 @@ const modNext = async (req, res) => {
     console.log(`Add word ${next} as next of ${previous} in ${by} ${target} successfully`)
   }
   const docB = await words.findOne({ name: edit }).catch((err) => err)
-  if ('message' in docB) {
+  if (docB && 'message' in docB) {
     console.error(docB)
     return res.status(500).send(docB.message)
   }
   if (!docB) {
     console.log('add', edit)
     const created = await words.create({ name: edit }).catch((err) => err)
-    if ('message' in created) {
+    if (created && 'message' in created) {
       console.error(created)
       return res.status(500).send(created.message)
     }
@@ -630,7 +630,7 @@ const patchNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -665,7 +665,7 @@ const removeNext = async (req, res) => {
     return res.status(fillter.statusCode).end()
   }
   const doc = await words.findOne(fillter).then((doc) => doc).catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
@@ -694,13 +694,13 @@ const removeNext = async (req, res) => {
 
 const stat = async (req, res) => {
   const doc = await statistics.findOne().catch((err) => err)
-  if ('message' in doc) {
+  if (doc && 'message' in doc) {
     console.error(doc)
     return res.status(500).send(doc.message)
   }
   if (!doc) {
     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if ('message' in first) {
+    if (first && 'message' in first) {
       console.error(first)
       return res.status(500).send(first.message)
     }
@@ -709,27 +709,27 @@ const stat = async (req, res) => {
       return res.status(304).end()
     }
     const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
-    if ('message' in lastAdd) {
+    if (lastAdd && 'message' in lastAdd) {
       console.error(lastAdd)
       return res.status(500).send(lastAdd.message)
     }
     const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-    if ('message' in lastMod) {
+    if (lastMod && 'message' in lastMod) {
       console.error(lastMod)
       return res.status(500).send(lastMod.message)
     }
     const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
-    if ('message' in lastHigh) {
+    if (lastHigh && 'message' in lastHigh) {
       console.error(lastHigh)
       return res.status(500).send(lastHigh.message)
     }
     const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
-    if ('message' in lastLow) {
+    if (lastLow && 'message' in lastLow) {
       console.error(lastLow)
       return res.status(500).send(lastLow.message)
     }
     const all = await words.find().catch((err) => err)
-    if ('message' in all) {
+    if (all && 'message' in all) {
       console.error(all)
       return res.status(500).send(all.message)
     }
@@ -758,7 +758,7 @@ const stat = async (req, res) => {
       lastLow : extract_doc(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
-    if ('message' in result) {
+    if (result && 'message' in result) {
       console.error(result)
       return res.status(500).send(result.message)
     }
