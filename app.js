@@ -88,29 +88,9 @@ for (const name of Object.keys(nets)) {
   }
 }
 
-const words     = require('./models/wordsModel.js')
 const mongoose  = require('mongoose')
-
-mongoose.connect(
-  `mongodb://${config.dbUser}:${config.dbPass}@${config.dbUrl}/${config.dbUse}`,{
-    retryWrites:true,
-    w:'majority',
-    //useNewUrlParser: true, // Boilerplate for Mongoose 5.x
-    useUnifiedTopology: true,
-    autoIndex: true, // Build indexes
-    maxPoolSize: 1, // Maintain up to 1 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-    family: 4 // Use IPv4, skip trying IPv6
-  }
-)
-
-const db = mongoose.connection
-
-db.on('error', console.error.bind(console, 'mongoose connection error:'))
-db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
-
-const logFile = fs.createWriteStream('app.log', { flags: 'a' })
+const words     = require('./models/wordsModel.js')
+const logFile   = fs.createWriteStream('app.log', { flags: 'a' })
 
 new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
   const originalMethod = console[methodName]
@@ -278,6 +258,23 @@ httpsServer.listen(app.get('port_https'), () => {
   console.info(`♥ Ko-fi       -> https://ko-fi.com/TypeNaN\n`)
 
   console.info(`✔ HTTPS Server running on host ${config.hostname} ip ${config.ip } port ${app.get('port_https')} in ${app.get('env')}`)
+  
+  mongoose.connect(
+    `mongodb://${config.dbUser}:${config.dbPass}@${config.dbUrl}/${config.dbUse}`, {
+      retryWrites: true,
+      w: 'majority',
+      //useNewUrlParser: true, // Boilerplate for Mongoose 5.x
+      useUnifiedTopology: true,
+      autoIndex: true, // Build indexes
+      maxPoolSize: 1, // Maintain up to 1 socket connections
+      serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      family: 4 // Use IPv4, skip trying IPv6
+    }
+  )
+  const db = mongoose.connection
+  db.on('error', console.error.bind(console, 'mongoose connection error:'))
+  db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
 })
 
 
