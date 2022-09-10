@@ -38,6 +38,10 @@ body {
   font-size: 1rem;
   text-align: center;
   border-bottom: solid 5px #a1f31e;
+  z-index: 1000;
+}
+#page-header:hover {
+  background-position: 100%;
 }
 #page-body {
   width: 100vw;
@@ -61,6 +65,7 @@ body {
   left: 0;
   width: fit-content;
   height: fit-content;
+  z-index: 1000;
 }
 #page-right {position: absolute;}
 #page-footer {
@@ -68,6 +73,7 @@ body {
   height: 280px;
   background-color: #080808;
   border-top: double 10px #a1f31e;
+  z-index: 1000;
 }
 
 @media (min-width: 800px) {

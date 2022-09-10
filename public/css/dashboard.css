@@ -17,6 +17,9 @@
   background-color: #aac;
   border-radius: 15px;
 }
+.statistics-section:hover {
+  background-image: linear-gradient(to right, #141E30 0%, #243B55 51%, #141E30 100%);
+}
 .statistics-label {
   width: 100%;
   height: 30px;
