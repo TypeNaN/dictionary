@@ -840,6 +840,56 @@ const add = async (data) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำศัพท์ 1 รายการจาก collection words                                       |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const remove = async (data) => {
+  let { by, target } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) {
+    return E304('word-remove-error', `Remove word by ${by} ${target} status code ${fillter.statusCode}`)
+  }
+  const doc = await words.findOne(fillter).catch((err) => err)
+  if (doc && 'message' in doc) return E500('word-remove-error', doc)
+  if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
+  const raw = {
+    create  : doc.create,
+    modified: Math.floor(new Date().getTime()),
+    counter : doc.counter,
+    name    : doc.name,
+    previous: Object.keys(doc.tree),
+    next    : Object.keys(doc.tree[' '])
+  }
+  const del = await words.deleteOne(fillter).catch((err) => err)
+  if (del && 'message' in del) return E500('word-remove-error', del)
+  if ('deletedCount' in del) {
+    if (del.deletedCount > 0) {
+      const stat = await statistics.findOne().catch((err) => err)
+      if (stat && 'message' in stat) return E500('word-remove-error', stat)
+      if (stat.first.name == raw.name) {
+        stat.first = {}
+        const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+        if (first && 'message' in first) console.error(first)
+        if (!first) {
+          console.log('Dictionary is empty')
+        } else {
+          stat.first = field_extract(first)
+        }
+      }
+      if (stat.lastDel.length > 99) await stat.lastDel.pull(stat.lastDel[99])
+      await stat.lastDel.push(raw)
+      await stat.lastDel.sort((a, b) => b.modified - a.modified)
+      await stat.save()
+    }
+  }
+  return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
+}
+
+
+
 class wordsIO {
   constructor(socket) {
 
@@ -857,6 +907,7 @@ class wordsIO {
     socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
     
     socket.on('word-add', async (data) => respond('word-add', add, data))
+    socket.on('word-remove', async (data) => respond('word-remove', remove, data))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
 
   }
