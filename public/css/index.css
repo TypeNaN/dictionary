@@ -54,7 +54,7 @@ body {
   min-width: 240px;
   max-width: 1280px;
   min-height: calc(100vh - 40px - 280px); /* 100vh - header - footer */
-  margin: auto;
+  margin: 40px auto;
   padding: 30px 0 30px 0;
   border-radius: 0 0 15px 15px;
   background-color: #fff;
@@ -84,7 +84,12 @@ body {
     text-align: right;
     padding-right: 40px;
   }
+  #page-body {
+    min-height: calc(100vh - 70px - 280px);
+  }
   #page-content {
+    min-height: calc(100vh - 70px - 280px);
+    margin: 70px auto;
     padding: 30px 0 150px 0;
   }
 }

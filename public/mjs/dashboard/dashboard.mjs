@@ -19,10 +19,12 @@ export default class extends abstractPage {
     header.innerHTML = 'Dictionary'
 
     new navMain(left).render()
-    new statistics(content).render()
+    new statistics(content, socket).fetch().then(() => {
+      /* Test only */
+      // socket.emit('word-add', { name: 'ลอง' })
+      // socket.emit('word-remove', { by:'name', target: 'ลอง' })
+    })
     
-    socket.on('res-word', (data) => console.log(data))
-    socket.emit('req-test', { name: 'ก้าง' })
-
+    socket.on('hello', (data) => console.log(data))
   }
 }
