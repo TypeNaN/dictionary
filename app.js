@@ -195,27 +195,27 @@ app.get('/', checkCore, (req, res) => {
   res.end()
 })
 
-app.get('/statistics', checkCore, words.stat)
-app.get('/views', checkCore, words.views)
-app.get('/view/:by/:target', checkCore, words.view)
-app.get('/search/:name', checkCore, words.search)
+app.get('/statistics', checkCore, words.rest_stat)
+app.get('/views', checkCore, words.rest_views)
+app.get('/view/:by/:target', checkCore, words.rest_view)
+app.get('/search/:name', checkCore, words.rest_search)
 
-app.get('/add/:name', checkCore, words.add)
-app.get('/add/prev/:by/:target/:previous', checkCore, words.addPrev)
-app.get('/add/next/:by/:target/:previous/:next', checkCore, words.addNext)
+app.get('/add/:name', checkCore, words.rest_add)
+app.get('/add/prev/:by/:target/:previous', checkCore, words.rest_addPrev)
+app.get('/add/next/:by/:target/:previous/:next', checkCore, words.rest_addNext)
 
-app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.modPrev)
-app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modPrev)
-app.get('/modify/next/:by/:target/:previous/:next/:edit', checkCore, words.modNext)
+app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.rest_modPrev)
+app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.rest_modPrev)
+app.get('/modify/next/:by/:target/:previous/:next/:edit', checkCore, words.rest_modNext)
 
-app.put('/patch/:by/:target', checkCore, words.patch)
-app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
-app.put('/patch/prev/:by/:target/:previous', checkCore, words.patchPrev)
-app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.patchNext)
+app.put('/patch/:by/:target', checkCore, words.rest_patch)
+app.put('/patch/:by/:target/:key', checkCore, words.rest_patchKey)
+app.put('/patch/prev/:by/:target/:previous', checkCore, words.rest_patchPrev)
+app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.rest_patchNext)
 
-app.delete('/remove/:by/:target', checkCore, words.remove)
-app.delete('/remove/prev/:by/:target/:previous', checkCore, words.removePrev)
-app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.removeNext)
+app.delete('/remove/:by/:target', checkCore, words.rest_remove)
+app.delete('/remove/prev/:by/:target/:previous', checkCore, words.rest_removePrev)
+app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.rest_removeNext)
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -223,20 +223,8 @@ app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.removeNe
 // └────────────────────────────────────────────────────────────────────────────┘
 
 io.on('connection', (socket) => {
-  console.log('on connection: ' + socket.id)
-  socket.broadcast.emit(`Hi, I am ${socket.id}`)
-
-  socket.on('message', (data) => {
-    console.log('socket', socket.id, 'message', JSON.stringify(data))
-    socket.emit('message', `${socket.id} | ${JSON.stringify(data) }`)
-  })
-
-  socket.on('req-test', (data) => {
-    console.log('socket', socket.id, 'req-test', JSON.stringify(data))
-    socket.emit('res-word', `${socket.id} | ${JSON.stringify(data) }`)
-  })
-
-  socket.on('close', () => console.log('socket', socket.id, 'closed'))
+  new words.wordsIO(socket)
+  // สร้าง socket client สำหรับใช้กับ modules อื่นๆ ได้ที่นี่
 })
 
 
@@ -270,6 +258,9 @@ httpsServer.listen(app.get('port_https'), () => {
       serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 5 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
       family: 4 // Use IPv4, skip trying IPv6
+    }, (err) => {
+      if (err) throw err
+      console.info("✔ MongoDB database ready to use")
     }
   )
   const db = mongoose.connection

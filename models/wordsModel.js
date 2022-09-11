@@ -72,7 +72,16 @@ const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
 const hline = '\n────────────────────────────────────────────────────────────────────────────────\n'
 
-const extract_doc = (data) => Array.from(data.map((chunk) => ({
+const field_extract = (data) => ({
+  create  : data.create,
+  modified: data.modified,
+  counter : data.counter,
+  name    : data.name,
+  previous: Object.keys(data.tree),
+  next    : Object.keys(data.tree[' '])
+})
+
+const field_extracts = (data) => Array.from(data.map((chunk) => ({
   create  : chunk.get('create'),
   modified: chunk.get('modified'),
   counter : chunk.get('counter'),
@@ -81,7 +90,16 @@ const extract_doc = (data) => Array.from(data.map((chunk) => ({
   next    : Object.keys(chunk.get(`tree.${' '}`))
 })))
 
-const extract_field = (data) => Array.from(data.map((chunk) => ({
+const field_stat_extract = (data) => ({
+  create  : data.create,
+  modified: data.modified,
+  counter : data.counter,
+  name    : data.name,
+  previous: data.previous,
+  next    : data.next
+})
+
+const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
   create  : chunk.create,
   modified: chunk.modified,
   counter : chunk.counter,
@@ -95,7 +113,7 @@ const extract_field = (data) => Array.from(data.map((chunk) => ({
 // │ เพิ่มคำศัพท์ลงใน collection words                                              |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const add = async (req, res) => {
+const rest_add = async (req, res) => {
   let { name } = req.params
   name = remove_spacails(decodeURIComponent(name))
   const doc = await words.create({ name: name }).catch((err) => err)
@@ -158,11 +176,11 @@ const add = async (req, res) => {
         previous: Object.keys(first.get(`tree`)),
         next    : Object.keys(first.get(`tree.${' '}`))
       },
-      lastAdd : extract_doc(lastAdd),
-      lastMod : extract_doc(lastMod),
+      lastAdd : field_extracts(lastAdd),
+      lastMod : field_extracts(lastMod),
       lastDel : [],
-      lastHigh: extract_doc(lastHigh),
-      lastLow : extract_doc(lastLow)
+      lastHigh: field_extracts(lastHigh),
+      lastLow : field_extracts(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
     if (result && 'message' in result) {
@@ -173,10 +191,10 @@ const add = async (req, res) => {
     return res.status(200).json(doc)
   }
   await stat.$set('total', parseInt(stat.get('total')) + 1)
-  await stat.$set('lastAdd', extract_doc(lastAdd))
-  await stat.$set('lastMod', extract_doc(lastMod))
-  await stat.$set('lastHigh', extract_doc(lastHigh))
-  await stat.$set('lastLow', extract_doc(lastLow))
+  await stat.$set('lastAdd', field_extracts(lastAdd))
+  await stat.$set('lastMod', field_extracts(lastMod))
+  await stat.$set('lastHigh', field_extracts(lastHigh))
+  await stat.$set('lastLow', field_extracts(lastLow))
   await stat.save()
   res.status(200).json(doc)
 }
@@ -186,7 +204,7 @@ const add = async (req, res) => {
 // │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const view = async (req, res) => {
+const rest_view = async (req, res) => {
   let { by, target } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -209,7 +227,7 @@ const view = async (req, res) => {
 // │ เรียกดูคำศัพท์ทั้งหมดจาก collection words                                        |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const views = async (req, res) => {
+const rest_views = async (req, res) => {
   words.find().then((result) => {
     console.log(`View all ${result.length} words`)
     res.status(200).json(result)
@@ -224,7 +242,7 @@ const views = async (req, res) => {
 // │ เรียกดูคำศัพท์ทั้งหมดที่ชึ้นต้นด้วยคำค้นหาจาก collection words                         |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const search = async (req, res) => {
+const rest_search = async (req, res) => {
   let { name } = req.params
   name = remove_spacails(decodeURIComponent(name))
   words.find({ name: { $regex: name, $options: 'i' } }).then((result) => {
@@ -241,7 +259,7 @@ const search = async (req, res) => {
 // │ ลบคำศัพท์ 1 รายการจาก collection words                                       |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const remove = async (req, res) => {
+const rest_remove = async (req, res) => {
   let { by, target } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -293,7 +311,7 @@ const remove = async (req, res) => {
 // │ แก้ไขข้อมูลทั้งหมดของคำศัพท์ 1 รายการจาก collection words                         |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const patch = async (req, res) => {
+const rest_patch = async (req, res) => {
   const data = req.body
   let { by, target } = req.params
   by = remove_spacails(decodeURIComponent(by))
@@ -320,7 +338,7 @@ const patch = async (req, res) => {
 // │ แก้ไขข้อมูลในคีย์ที่กำหนดของคำศัพท์ 1 รายการจาก collection words                    |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const patchKey = async (req, res) => {
+const rest_patchKey = async (req, res) => {
   const data = req.body
   let { by, target, key } = req.params
   by = remove_spacails(decodeURIComponent(by))
@@ -349,7 +367,7 @@ const patchKey = async (req, res) => {
 // │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const addPrev = async (req, res) => {
+const rest_addPrev = async (req, res) => {
   let { by, target, previous } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -383,7 +401,7 @@ const addPrev = async (req, res) => {
 // │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const modPrev = async (req, res) => {
+const rest_modPrev = async (req, res) => {
   let { by, target, previous, edit, merge } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -452,7 +470,7 @@ const modPrev = async (req, res) => {
 // │ แก้ไขข้อมูลทั้งหมดของคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words               |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const patchPrev = async (req, res) => {
+const rest_patchPrev = async (req, res) => {
   const data = req.body
   let { by, target, previous } = req.params
   by = remove_spacails(decodeURIComponent(by))
@@ -483,7 +501,7 @@ const patchPrev = async (req, res) => {
 // │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const removePrev = async (req, res) => {
+const rest_removePrev = async (req, res) => {
   let { by, target, previous } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -517,7 +535,7 @@ const removePrev = async (req, res) => {
 // │ เพิ่มคำถัดไปในคำศัพท์ 1 รายการจาก collection words                              |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const addNext = async (req, res) => {
+const rest_addNext = async (req, res) => {
   let { by, target, previous, next } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -556,7 +574,7 @@ const addNext = async (req, res) => {
 // │ แก้ไขคำถัดไปในคำศัพท์ 1 รายการจาก collection words                             |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const modNext = async (req, res) => {
+const rest_modNext = async (req, res) => {
   let { by, target, previous, next, edit } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -617,7 +635,7 @@ const modNext = async (req, res) => {
 // │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const patchNext = async (req, res) => {
+const rest_patchNext = async (req, res) => {
   const data = req.body
   let { by, target, previous, next } = req.params
   by = remove_spacails(decodeURIComponent(by))
@@ -653,7 +671,7 @@ const patchNext = async (req, res) => {
 // │ ลบคำถัดไปในคำศัพท์ 1 รายการจาก collection words                               |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const removeNext = async (req, res) => {
+const rest_removeNext = async (req, res) => {
   let { by, target, previous, next } = req.params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -692,7 +710,7 @@ const removeNext = async (req, res) => {
 // │ เรียกดูสรุปคำศัพท์ทั้งหมดจาก collection statistics                                |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const stat = async (req, res) => {
+const rest_stat = async (req, res) => {
   const doc = await statistics.findOne().catch((err) => err)
   if (doc && 'message' in doc) {
     console.error(doc)
@@ -733,29 +751,14 @@ const stat = async (req, res) => {
       console.error(all)
       return res.status(500).send(all.message)
     }
-    const extract_doc = (d) => Array.from(d.map((chunk) => ({
-      create  : chunk.get('create'),
-      modified: chunk.get('modified'),
-      counter : chunk.get('counter'),
-      name    : chunk.get('name'),
-      previous: Object.keys(chunk.get(`tree`)),
-      next    : Object.keys(chunk.get(`tree.${' '}`))
-    })))
     const data = {
       total   : all.length,
-      first   : {
-        create  : first.get('create'),
-        modified: first.get('modified'),
-        counter : first.get('counter'),
-        name    : first.get('name'),
-        previous: Object.keys(first.get(`tree`)),
-        next    : Object.keys(first.get(`tree.${' '}`))
-      },
-      lastAdd : extract_doc(lastAdd),
-      lastMod : extract_doc(lastMod),
+      first   : field_extract(first),
+      lastAdd : field_extracts(lastAdd),
+      lastMod : field_extracts(lastMod),
       lastDel : [],
-      lastHigh: extract_doc(lastHigh),
-      lastLow : extract_doc(lastLow)
+      lastHigh: field_extracts(lastHigh),
+      lastLow : field_extracts(lastLow)
     }
     const result = await statistics.create(data).catch((err) => err)
     if (result && 'message' in result) {
@@ -766,40 +769,116 @@ const stat = async (req, res) => {
     return res.status(200).json(data)
   }
   const data = {
-    total: doc.get('total'),
-    first: {
-      create  : doc.get('first.create'),
-      modified: doc.get('first.modified'),
-      counter : doc.get('first.counter'),
-      name    : doc.get('first.name'),
-      previous: doc.get('first.previous'),
-      next    : doc.get('first.next')
-    },
-    lastAdd : extract_field(doc.get('lastAdd')),
-    lastMod : extract_field(doc.get('lastMod')),
-    lastDel : extract_field(doc.get('lastDel')),
-    lastHigh: extract_field(doc.get('lastHigh')),
-    lastLow : extract_field(doc.get('lastLow'))
+    total   : doc.get('total'),
+    first   : field_stat_extract(doc.get('first')),
+    lastAdd : field_stat_extracts(doc.get('lastAdd')),
+    lastMod : field_stat_extracts(doc.get('lastMod')),
+    lastDel : field_stat_extracts(doc.get('lastDel')),
+    lastHigh: field_stat_extracts(doc.get('lastHigh')),
+    lastLow : field_stat_extracts(doc.get('lastLow'))
   }
   res.status(200).json(data)
 }
 
 
+
+
+const R200 = (event, message, result) => {
+  console.log(message)
+  return { event: event, code: 200, message: message, result: result }
+}
+const E304 = (event, message) => {
+  console.log(message)
+  return { event: event, code: 304, message: message, result: null }
+}
+const E500 = (event, err) => {
+  console.error(err)
+  return { event: event, code: 500, message: err.message, result: null }
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำศัพท์ลงใน collection words                                              |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const add = async (data) => {
+  let { name } = data
+  name = remove_spacails(decodeURIComponent(name))
+  const doc = await words.create({ name: name }).catch((err) => err)
+  if (doc && 'message' in doc) {
+    if (doc.message.startsWith('E11000 duplicate key error collection')) {
+      return E304('word-add-error', `Can't add word ${name} in to Dictionary ${name} is exist`)
+    }
+    return E500('word-add-error', doc)
+  }
+  const stat = await statistics.findOne().catch((err) => err)
+  if (stat && 'message' in stat) console.error(stat)
+  if (!stat) {
+    const raw = {
+      total   : 1,
+      first   : field_extract(doc),
+      lastAdd : field_extract(doc),
+      lastMod : field_extract(doc),
+      lastDel : [],
+      lastHigh: field_extract(doc),
+      lastLow : field_extract(doc)
+    }
+    const result = await statistics.create(raw).catch((err) => err)
+    if (result && 'message' in result) console.error(result)
+  } else {
+    const raw = field_extract(doc)
+    if (stat.lastAdd.length > 99) await stat.lastAdd.pull(stat.lastAdd[99])
+    if (stat.lastMod.length > 99) await stat.lastMod.pull(stat.lastMod[99])
+    await stat.lastAdd.push(raw)
+    await stat.lastMod.push(raw)
+    await stat.lastAdd.sort((a, b) => a.create - b.create)
+    await stat.lastMod.sort((a, b) => b.modified - a.modified)
+    await stat.save()
+  }
+  const raw = field_extract(doc)
+  return R200('word-add-success', `Add word ${name} in to dictionary`, raw)
+}
+
+
+class wordsIO {
+  constructor(socket) {
+
+    // ┌────────────────────────────────────────────────────────────────────────────┐
+    // │ เส้นทางบริการ socket                                                          |
+    // └────────────────────────────────────────────────────────────────────────────┘
+    
+    const respond = async (label, process, data) => {
+      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
+      const { event, code, message, result } = await process(data)
+      socket.emit(event, { code: code, message: message, result })
+    }
+    
+    console.log(`Socket connection: ${socket.id}`)
+    socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
+    
+    socket.on('word-add', async (data) => respond('word-add', add, data))
+    socket.on('close', () => console.log('socket', socket.id, 'closed'))
+
+  }
+}
+
+
 module.exports = {
-  add,
-  addPrev,
-  addNext,
-  modPrev,
-  modNext,
-  patch,
-  patchKey,
-  patchPrev,
-  patchNext,
-  remove,
-  removePrev,
-  removeNext,
-  search,
-  views,
-  view,
-  stat
+  wordsIO,
+  rest_add,
+  rest_addPrev,
+  rest_addNext,
+  rest_modPrev,
+  rest_modNext,
+  rest_patch,
+  rest_patchKey,
+  rest_patchPrev,
+  rest_patchNext,
+  rest_remove,
+  rest_removePrev,
+  rest_removeNext,
+  rest_search,
+  rest_views,
+  rest_view,
+  rest_stat
 }
