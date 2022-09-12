@@ -47,6 +47,7 @@
   background-color: #fff;
   overflow-x: hidden;
   overflow-x: auto;
+  cursor: pointer;
 }
 .statistics-value::-webkit-scrollbar {width: 4px;}
 .statistics-value::-webkit-scrollbar-track {background: #a9d7e5;}
@@ -69,8 +70,8 @@
   height: 25px;
   margin-right: 10px;
   padding: 0 10px;
-  background-color: #888;
-  color: #fff !important;
+  background-color: #cfcfcf;
+  color: #444 !important;
 }
 .statistics-value>div>div:first-child>div {
   border-radius: 10px 0 0 0;
@@ -92,12 +93,14 @@
 }
 .statistics-value>div>div:nth-child(odd),
 .statistics-value>ul>li:nth-child(odd) {
-  background-color: #eee;
+  background-color: #efefef;
 }
 .statistics-value>div>div:nth-child(even),
 .statistics-value>ul>li:nth-child(even) {
-  background-color: #aaa;
-  color: #fff;
+  background-color: #dfdfdf;
+}
+.statistics-value>ul>li:hover {
+  background-color: #bfbfbf;
 }
 .statistics-value>ul>li>.date {
   float: left;

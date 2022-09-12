@@ -9,15 +9,14 @@ export default class {
     socket.on('word-remove-error', (data) => console.error(data))
     
     socket.on('word-add-success', (data) => {
-      console.log(data);
-      this.insertLastStat('lastAdd', data.result, 'create')
-      this.insertLastStat('lastMod', data.result, 'modified')
-      this.insertLastStat('lastHigh', data.result, 'modified', true)
-      this.insertLastStat('lastLow', data.result, 'modified', true)
+      this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
+      this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
+      // this.insertLastStat({ id: 'lastHigh', word: data.result, timestamps: 'modified' }, { duplicate: true })
+      // this.insertLastStat({ id: 'lastLow', word: data.result, timestamps: 'modified' }, { duplicate: true })
     })
+    
     socket.on('word-remove-success', (data) => {
-      console.log(data)
-      this.insertLastStat('lastDel', data.result, 'modified')
+      this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true })
     })
   }
 
@@ -91,18 +90,21 @@ export default class {
     this.container.appendChild(statistics)
   }
 
-  extract = (buf, time = 'create') => {
+  extract = (buf, timestamps = 'create') => {
     const ul = document.createElement('ul')
-    buf.forEach((x) => {
+    buf.forEach((word) => {
       const li = document.createElement('li')
-      let tooltip = `คำศัพท์ ${x.name}\n`
-      tooltip += `เพิ่มเมื่อ ${thdate(new Date(x['create']), { time: true, full: true, thainum: true })}\n`
-      tooltip += `แก้ไขเมื่อ ${thdate(new Date(x['modified']), { time: true, full: true, thainum: true })}\n`
-      tooltip += `เชื่อมโยงมา ${thnum(x.previous.length)} คำศัพท์\n`
-      tooltip += `เชื่อมโยงไป ${thnum(x.next.length)} คำศัพท์`
+      let tooltip = `คำศัพท์ ${word.name}\n`
+      tooltip += `เพิ่มเมื่อ ${thdate(new Date(word['create']), { time: true, full: true, thainum: true })}\n`
+      tooltip += `แก้ไขเมื่อ ${thdate(new Date(word['modified']), { time: true, full: true, thainum: true })}\n`
+      tooltip += `เชื่อมโยงมา ${thnum(word.previous.length)} คำศัพท์\n`
+      tooltip += `เชื่อมโยงไป ${thnum(word.next.length)} คำศัพท์`
       li.setAttribute('title', tooltip)
-      li.innerHTML = `<div class='date'>${thdate(new Date(x[time]), { time: true })}</div> <div class='previous'>${x.previous.length}</div><div class='word'>${x.name}</div><div class='next'>${x.next.length}</div>`
-    ul.appendChild(li)
+      li.innerHTML = `<div class='date'>${thdate(new Date(word[timestamps]), { time: true })}</div>`
+      li.innerHTML += `<div class='previous'>${word.previous.length}</div>`
+      li.innerHTML += `<div class='word'>${word.name}</div>`
+      li.innerHTML += `<div class='next'>${word.next.length}</div>`
+      ul.appendChild(li)
     })
     return ul
   }
@@ -163,23 +165,31 @@ export default class {
     this.container.appendChild(statistics)
   }
 
-  insertLastStat = async (id, data, time, after = false) => {
+  insertLastStat = async (data, options) => {
+    const { id, word, timestamps } = data
+    const { insert, duplicate } = options
     const section = document.getElementById(id)
     const box = section.childNodes[1]
     const value = box.childNodes[0]
     const ul = value.childNodes[0]
+    if (duplicate) this.removeDuplicate(ul, word.name)
     const li = document.createElement('li')
-    let tooltip = `คำศัพท์ ${data.name}\n`
-    tooltip += `เพิ่มเมื่อ ${thdate(new Date(data['create']), { time: true, full: true, thainum: true })}\n`
-    tooltip += `แก้ไขเมื่อ ${thdate(new Date(data['modified']), { time: true, full: true, thainum: true })}\n`
-    tooltip += `เชื่อมโยงมา ${thnum(data.previous.length)} คำศัพท์\n`
-    tooltip += `เชื่อมโยงไป ${thnum(data.next.length)} คำศัพท์`
+    let tooltip = `คำศัพท์ ${word.name}\n`
+    tooltip += `เพิ่มเมื่อ ${thdate(new Date(word['create']), { time: true, full: true, thainum: true })}\n`
+    tooltip += `แก้ไขเมื่อ ${thdate(new Date(word['modified']), { time: true, full: true, thainum: true })}\n`
+    tooltip += `เชื่อมโยงมา ${thnum(word.previous.length)} คำศัพท์\n`
+    tooltip += `เชื่อมโยงไป ${thnum(word.next.length)} คำศัพท์`
     li.setAttribute('title', tooltip)
-    li.innerHTML = `<div class='date'>${thdate(new Date(data[time]), { time: true })}</div> <div class='previous'>${data.previous.length}</div><div class='word'>${data.name}</div><div class='next'>${data.next.length}</div>`
-    if (after) {
-      ul.appendChild(li)
-    } else {
-      ul.insertBefore(li, ul.childNodes[0])
-    }
+    li.innerHTML = `<div class='date'>${thdate(new Date(word[timestamps]), { time: true })}</div>`
+    li.innerHTML += `<div class='previous'>${word.previous.length}</div>`
+    li.innerHTML += `<div class='word'>${word.name}</div>`
+    li.innerHTML += `<div class='next'>${word.next.length}</div>`
+    if (insert) { ul.insertBefore(li, ul.childNodes[0]) } else { ul.appendChild(li) }
+  }
+
+  removeDuplicate = (root, word) => {
+    root.childNodes.forEach((li) => {
+      if (li.childNodes[2].textContent == word) root.removeChild(li)
+    })
   }
 }
