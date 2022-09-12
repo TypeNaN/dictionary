@@ -1,6 +1,7 @@
 'use strict'
 
 import dashboard from './dashboard/dashboard.mjs'
+import add from './add/add.mjs'
 import page404 from './404.mjs'
 
 
@@ -39,6 +40,7 @@ const router = async (path = '/', query) => {
   const routes = [
     { path: '/', view: dashboard },
     { path: '/dashboard', view: dashboard },
+    { path: '/add', view: add },
     { path: '/:another', view: page404 }
   ]
   const matches = routes.map((route) => ({ route: route, result: path.match(getRoute(route.path)) }))

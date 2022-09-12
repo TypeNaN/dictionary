@@ -17,6 +17,7 @@ export default class {
     this.toggle('toggle-sidebar')
     this.add({ title: 'Home', class: 'menu-home', href: '/' })
     this.add({ title: 'Dashboard', class: 'menu-dashboard', href: '/dashboard' })
+    this.add({ title: 'Add', class: 'menu-add', href: '/add' })
 
     this.root.onclick = this.toggleState
 
