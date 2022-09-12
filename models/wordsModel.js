@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 
 const collection = 'words'
 const collection_stat = 'statistics'
+const collection_delete = 'words_deleted'
 
 const wordsSchema = new mongoose.Schema({
   create    : { type: Number, default: 0 },                   // เวลาที่ถูกสร้าง
@@ -65,8 +66,23 @@ const statSchema = new mongoose.Schema({
   collection_stat
 })
 
+const wordsDelStat = new mongoose.Schema({
+  create  : { type: Number, default: 0 },
+  modified: { type: Number, default: 0 },
+  counter : { type: Number, default: 0 },
+  name    : { type: String, required: true, unique: true},
+  previous: { type: [String], default: [] },
+  next    : { type: [String], default: [] }
+},
+{
+  versionKey: false,
+  strict: true,
+  collection_delete
+})
+
 const words = mongoose.model(collection, wordsSchema)
 const statistics = mongoose.model(collection_stat, statSchema)
+const wordsDeleted = mongoose.model(collection_delete, wordsDelStat)
 
 const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"\\|,.<>/?]/g, '')
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
@@ -109,95 +125,95 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 })))
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เพิ่มคำศัพท์ลงใน collection words                                              |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ เพิ่มคำศัพท์ลงใน collection words                                              |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_add = async (req, res) => {
-  let { name } = req.params
-  name = remove_spacails(decodeURIComponent(name))
-  const doc = await words.create({ name: name }).catch((err) => err)
-  if (doc && 'message' in doc) {
-    if (doc.message.startsWith('E11000 duplicate key error collection')) {
-      console.log(`Can't add word ${name} in to Dictionary ${name} is exist`)
-      return res.status(304).end()
-    }
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  console.log(`Add word ${name} in to Dictionary`)
-  const stat = await statistics.findOne().catch((err) => err)
-  if (stat && 'message' in stat) {
-    console.error(stat)
-    return res.status(500).send(stat.message)
-  }
-  const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
-  if (lastAdd && 'message' in lastAdd) {
-    console.error(lastAdd)
-    return res.status(500).send(lastAdd.message)
-  }
-  const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-  if (lastMod && 'message' in lastMod) {
-    console.error(lastMod)
-    return res.status(500).send(lastMod.message)
-  }
-  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
-  if (lastHigh && 'message' in lastHigh) {
-    console.error(lastHigh)
-    return res.status(500).send(lastHigh.message)
-  }
-  const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
-  if (lastLow && 'message' in lastLow) {
-    console.error(lastLow)
-    return res.status(500).send(lastLow.message)
-  }
-  if (!stat) {
-    const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if (first && 'message' in first) {
-      console.error(first)
-      return res.status(500).send(first.message)
-    }
-    if (!first) {
-      console.log('Dictionary is empty')
-      return res.status(304).end()
-    }
-    const all = await words.find().catch((err) => err)
-    if (all && 'message' in all) {
-      console.error(all)
-      return res.status(500).send(all.message)
-    }
-    const data = {
-      total   : all.length,
-      first   : {
-        create  : first.get('create'),
-        modified: first.get('modified'),
-        counter : first.get('counter'),
-        name    : first.get('name'),
-        previous: Object.keys(first.get(`tree`)),
-        next    : Object.keys(first.get(`tree.${' '}`))
-      },
-      lastAdd : field_extracts(lastAdd),
-      lastMod : field_extracts(lastMod),
-      lastDel : [],
-      lastHigh: field_extracts(lastHigh),
-      lastLow : field_extracts(lastLow)
-    }
-    const result = await statistics.create(data).catch((err) => err)
-    if (result && 'message' in result) {
-      console.error(result)
-      return res.status(500).send(result.message)
-    }
-    console.log(`Add statistics in to Dictionary`)
-    return res.status(200).json(doc)
-  }
-  await stat.$set('total', parseInt(stat.get('total')) + 1)
-  await stat.$set('lastAdd', field_extracts(lastAdd))
-  await stat.$set('lastMod', field_extracts(lastMod))
-  await stat.$set('lastHigh', field_extracts(lastHigh))
-  await stat.$set('lastLow', field_extracts(lastLow))
-  await stat.save()
-  res.status(200).json(doc)
-}
+// const rest_add = async (req, res) => {
+//   let { name } = req.params
+//   name = remove_spacails(decodeURIComponent(name))
+//   const doc = await words.create({ name: name }).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     if (doc.message.startsWith('E11000 duplicate key error collection')) {
+//       console.log(`Can't add word ${name} in to Dictionary ${name} is exist`)
+//       return res.status(304).end()
+//     }
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   console.log(`Add word ${name} in to Dictionary`)
+//   const stat = await statistics.findOne().catch((err) => err)
+//   if (stat && 'message' in stat) {
+//     console.error(stat)
+//     return res.status(500).send(stat.message)
+//   }
+//   const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+//   if (lastAdd && 'message' in lastAdd) {
+//     console.error(lastAdd)
+//     return res.status(500).send(lastAdd.message)
+//   }
+//   const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//   if (lastMod && 'message' in lastMod) {
+//     console.error(lastMod)
+//     return res.status(500).send(lastMod.message)
+//   }
+//   const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+//   if (lastHigh && 'message' in lastHigh) {
+//     console.error(lastHigh)
+//     return res.status(500).send(lastHigh.message)
+//   }
+//   const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+//   if (lastLow && 'message' in lastLow) {
+//     console.error(lastLow)
+//     return res.status(500).send(lastLow.message)
+//   }
+//   if (!stat) {
+//     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+//     if (first && 'message' in first) {
+//       console.error(first)
+//       return res.status(500).send(first.message)
+//     }
+//     if (!first) {
+//       console.log('Dictionary is empty')
+//       return res.status(304).end()
+//     }
+//     const all = await words.find().catch((err) => err)
+//     if (all && 'message' in all) {
+//       console.error(all)
+//       return res.status(500).send(all.message)
+//     }
+//     const data = {
+//       total   : all.length,
+//       first   : {
+//         create  : first.get('create'),
+//         modified: first.get('modified'),
+//         counter : first.get('counter'),
+//         name    : first.get('name'),
+//         previous: Object.keys(first.get(`tree`)),
+//         next    : Object.keys(first.get(`tree.${' '}`))
+//       },
+//       lastAdd : field_extracts(lastAdd),
+//       lastMod : field_extracts(lastMod),
+//       lastDel : [],
+//       lastHigh: field_extracts(lastHigh),
+//       lastLow : field_extracts(lastLow)
+//     }
+//     const result = await statistics.create(data).catch((err) => err)
+//     if (result && 'message' in result) {
+//       console.error(result)
+//       return res.status(500).send(result.message)
+//     }
+//     console.log(`Add statistics in to Dictionary`)
+//     return res.status(200).json(doc)
+//   }
+//   await stat.$set('total', parseInt(stat.get('total')) + 1)
+//   await stat.$set('lastAdd', field_extracts(lastAdd))
+//   await stat.$set('lastMod', field_extracts(lastMod))
+//   await stat.$set('lastHigh', field_extracts(lastHigh))
+//   await stat.$set('lastLow', field_extracts(lastLow))
+//   await stat.save()
+//   res.status(200).json(doc)
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -710,75 +726,71 @@ const rest_removeNext = async (req, res) => {
 // │ เรียกดูสรุปคำศัพท์ทั้งหมดจาก collection statistics                                |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_stat = async (req, res) => {
-  const doc = await statistics.findOne().catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-    if (first && 'message' in first) {
-      console.error(first)
-      return res.status(500).send(first.message)
-    }
-    if (!first) {
-      console.log('Dictionary is empty')
-      return res.status(304).end()
-    }
-    const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
-    if (lastAdd && 'message' in lastAdd) {
-      console.error(lastAdd)
-      return res.status(500).send(lastAdd.message)
-    }
-    const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-    if (lastMod && 'message' in lastMod) {
-      console.error(lastMod)
-      return res.status(500).send(lastMod.message)
-    }
-    const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
-    if (lastHigh && 'message' in lastHigh) {
-      console.error(lastHigh)
-      return res.status(500).send(lastHigh.message)
-    }
-    const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
-    if (lastLow && 'message' in lastLow) {
-      console.error(lastLow)
-      return res.status(500).send(lastLow.message)
-    }
-    const all = await words.find().catch((err) => err)
-    if (all && 'message' in all) {
-      console.error(all)
-      return res.status(500).send(all.message)
-    }
-    const data = {
-      total   : all.length,
-      first   : field_extract(first),
-      lastAdd : field_extracts(lastAdd),
-      lastMod : field_extracts(lastMod),
-      lastDel : [],
-      lastHigh: field_extracts(lastHigh),
-      lastLow : field_extracts(lastLow)
-    }
-    const result = await statistics.create(data).catch((err) => err)
-    if (result && 'message' in result) {
-      console.error(result)
-      return res.status(500).send(result.message)
-    }
-    console.log(`Add statistics in to Dictionary`)
-    return res.status(200).json(data)
-  }
-  const data = {
-    total   : doc.get('total'),
-    first   : field_stat_extract(doc.get('first')),
-    lastAdd : field_stat_extracts(doc.get('lastAdd')),
-    lastMod : field_stat_extracts(doc.get('lastMod')),
-    lastDel : field_stat_extracts(doc.get('lastDel')),
-    lastHigh: field_stat_extracts(doc.get('lastHigh')),
-    lastLow : field_stat_extracts(doc.get('lastLow'))
-  }
-  res.status(200).json(data)
-}
+// const rest_stat = async (req, res) => {
+//   const doc = await statistics.findOne().catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+//     if (first && 'message' in first) {
+//       console.error(first)
+//       return res.status(500).send(first.message)
+//     }
+//     if (!first) {
+//       console.log('Dictionary is empty')
+//       return res.status(304).end()
+//     }
+//     const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+//     if (lastAdd && 'message' in lastAdd) {
+//       console.error(lastAdd)
+//       return res.status(500).send(lastAdd.message)
+//     }
+//     const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//     if (lastMod && 'message' in lastMod) {
+//       console.error(lastMod)
+//       return res.status(500).send(lastMod.message)
+//     }
+//     const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+//     if (lastHigh && 'message' in lastHigh) {
+//       console.error(lastHigh)
+//       return res.status(500).send(lastHigh.message)
+//     }
+//     const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+//     if (lastLow && 'message' in lastLow) {
+//       console.error(lastLow)
+//       return res.status(500).send(lastLow.message)
+//     }
+//     const total = await words.countDocuments()
+//     const data = {
+//       total: total,
+//       first   : field_extract(first),
+//       lastAdd : field_extracts(lastAdd),
+//       lastMod : field_extracts(lastMod),
+//       lastDel : [],
+//       lastHigh: field_extracts(lastHigh),
+//       lastLow : field_extracts(lastLow)
+//     }
+//     const result = await statistics.create(data).catch((err) => err)
+//     if (result && 'message' in result) {
+//       console.error(result)
+//       return res.status(500).send(result.message)
+//     }
+//     console.log(`Add statistics in to Dictionary`)
+//     return res.status(200).json(data)
+//   }
+//   const data = {
+//     total   : doc.get('total'),
+//     first   : field_stat_extract(doc.get('first')),
+//     lastAdd : field_stat_extracts(doc.get('lastAdd')),
+//     lastMod : field_stat_extracts(doc.get('lastMod')),
+//     lastDel : field_stat_extracts(doc.get('lastDel')),
+//     lastHigh: field_stat_extracts(doc.get('lastHigh')),
+//     lastLow : field_stat_extracts(doc.get('lastLow'))
+//   }
+//   res.status(200).json(data)
+// }
 
 
 
@@ -791,9 +803,71 @@ const E304 = (event, message) => {
   console.log(message)
   return { event: event, code: 304, message: message, result: null }
 }
+const E404 = (event, message) => {
+  console.error(message)
+  return { event: event, code: 404, message: message, result: null }
+}
 const E500 = (event, err) => {
   console.error(err)
   return { event: event, code: 500, message: err.message, result: null }
+}
+
+
+const rest_stat = async (req, res) => {
+  stat().then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
+const rest_add = async (req, res) => {
+  add(req.params).then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูสรุปคำศัพท์ทั้งหมดจาก collection words                                     |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const stat = async () => {
+  const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+  if (first && 'message' in first) return E500('word-stat-error', first)
+  if (!first) return E404('word-stat-error', 'Dictionary is empty')
+  const total = await words.countDocuments()
+  const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+  if (lastAdd && 'message' in lastAdd) console.error(lastAdd)
+  const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+  if (lastMod && 'message' in lastMod) console.error(lastMod)
+  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+  if (lastHigh && 'message' in lastHigh) console.error(lastHigh)
+  const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+  if (lastLow && 'message' in lastLow) console.error(lastLow)
+  const lastDel = await wordsDeleted.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+  if (lastDel && 'message' in lastDel) console.error(lastDel)
+  
+  console.log(field_stat_extracts(lastDel));
+
+  const data = {
+    total    : total,
+    first    : field_extract(first),
+    lastAdd  : field_extracts(lastAdd),
+    lastMod  : field_extracts(lastMod),
+    lastDel  : field_stat_extracts(lastDel),
+    lastHigh : field_extracts(lastHigh),
+    lastLow  : field_extracts(lastLow)
+  }
+  return R200('word-stat-success', 'success', data)
+  
 }
 
 
@@ -804,39 +878,15 @@ const E500 = (event, err) => {
 const add = async (data) => {
   let { name } = data
   name = remove_spacails(decodeURIComponent(name))
-  const doc = await words.create({ name: name }).catch((err) => err)
-  if (doc && 'message' in doc) {
-    if (doc.message.startsWith('E11000 duplicate key error collection')) {
+  return words.create({ name: name }).then((doc) => {
+    const raw = field_extract(doc)
+    return R200('word-add-success', `Add word ${name} in to dictionary`, raw)
+  }).catch((err) => {
+    if (err.message.startsWith('E11000 duplicate key error collection')) {
       return E304('word-add-error', `Can't add word ${name} in to Dictionary ${name} is exist`)
     }
-    return E500('word-add-error', doc)
-  }
-  const stat = await statistics.findOne().catch((err) => err)
-  if (stat && 'message' in stat) console.error(stat)
-  if (!stat) {
-    const raw = {
-      total   : 1,
-      first   : field_extract(doc),
-      lastAdd : field_extract(doc),
-      lastMod : field_extract(doc),
-      lastDel : [],
-      lastHigh: field_extract(doc),
-      lastLow : field_extract(doc)
-    }
-    const result = await statistics.create(raw).catch((err) => err)
-    if (result && 'message' in result) console.error(result)
-  } else {
-    const raw = field_extract(doc)
-    if (stat.lastAdd.length > 99) await stat.lastAdd.pull(stat.lastAdd[99])
-    if (stat.lastMod.length > 99) await stat.lastMod.pull(stat.lastMod[99])
-    await stat.lastAdd.push(raw)
-    await stat.lastMod.push(raw)
-    await stat.lastAdd.sort((a, b) => a.create - b.create)
-    await stat.lastMod.sort((a, b) => b.modified - a.modified)
-    await stat.save()
-  }
-  const raw = field_extract(doc)
-  return R200('word-add-success', `Add word ${name} in to dictionary`, raw)
+    return E500('word-add-error', err)
+  })
 }
 
 
@@ -852,41 +902,186 @@ const remove = async (data) => {
   if ('statusCode' in fillter) {
     return E304('word-remove-error', `Remove word by ${by} ${target} status code ${fillter.statusCode}`)
   }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) return E500('word-remove-error', doc)
-  if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
-  const raw = {
-    create  : doc.create,
-    modified: Math.floor(new Date().getTime()),
-    counter : doc.counter,
-    name    : doc.name,
-    previous: Object.keys(doc.tree),
-    next    : Object.keys(doc.tree[' '])
-  }
-  const del = await words.deleteOne(fillter).catch((err) => err)
-  if (del && 'message' in del) return E500('word-remove-error', del)
-  if ('deletedCount' in del) {
-    if (del.deletedCount > 0) {
-      const stat = await statistics.findOne().catch((err) => err)
-      if (stat && 'message' in stat) return E500('word-remove-error', stat)
-      if (stat.first.name == raw.name) {
-        stat.first = {}
-        const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-        if (first && 'message' in first) console.error(first)
-        if (!first) {
-          console.log('Dictionary is empty')
-        } else {
-          stat.first = field_extract(first)
-        }
-      }
-      if (stat.lastDel.length > 99) await stat.lastDel.pull(stat.lastDel[99])
-      await stat.lastDel.push(raw)
-      await stat.lastDel.sort((a, b) => b.modified - a.modified)
-      await stat.save()
+  return words.findOne(fillter).then((doc) => {
+    if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
+    const raw = {
+      create: doc.create,
+      modified: Math.floor(new Date().getTime()),
+      counter: doc.counter,
+      name: doc.name,
+      previous: Object.keys(doc.tree),
+      next: Object.keys(doc.tree[' '])
     }
-  }
-  return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
+    doc.remove()
+    wordsDeleted.findOne(fillter).then((docDel) => {
+      if (!docDel) {
+        docDel = new wordsDeleted(raw)
+      } else {
+        docDel.create   = raw.create
+        docDel.modified = raw.modified
+        docDel.counter  = raw.counter
+        docDel.previous = raw.previous
+        docDel.next     = raw.next
+      }
+      docDel.save()
+    }).catch((err) => {
+      return E500('word-remove-error', err)
+    })
+    return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
+  }).catch((err) => {
+    return E500('word-remove-error', err)
+  })
+
+
+
+  // const doc = await words.findOne(fillter).catch((err) => err)
+  // if (doc && 'message' in doc) return E500('word-remove-error', doc)
+  // if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
+  // const raw = {
+  //   create: doc.create,
+  //   modified: Math.floor(new Date().getTime()),
+  //   counter: doc.counter,
+  //   name: doc.name,
+  //   previous: Object.keys(doc.tree),
+  //   next: Object.keys(doc.tree[' '])
+  // }
+  // const del = await words.deleteOne(fillter).catch((err) => err)
+  // if (del && 'message' in del) return E500('word-remove-error', del)
+  // if ('deletedCount' in del) {
+  //   if (del.deletedCount > 0) {
+  //     const stat = await statistics.findOne().catch((err) => err)
+  //     if (stat && 'message' in stat) return E500('word-remove-error', stat)
+  //     if (stat.first.name == raw.name) {
+  //       stat.first = {}
+  //       const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+  //       if (first && 'message' in first) console.error(first)
+  //       if (!first) {
+  //         console.log('Dictionary is empty')
+  //       } else {
+  //         stat.first = field_extract(first)
+  //       }
+  //     }
+  //     if (stat.lastDel.length > 99) await stat.lastDel.pull(stat.lastDel[99])
+  //     await stat.lastDel.push(raw)
+  //     await stat.lastDel.sort((a, b) => b.modified - a.modified)
+  //     await stat.save()
+  //   }
+  // }
+  // return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
 }
+
+
+
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ เพิ่มคำศัพท์ลงใน collection words                                              |
+// // └────────────────────────────────────────────────────────────────────────────┘
+
+// const add = async (data) => {
+//   let { name } = data
+//   name = remove_spacails(decodeURIComponent(name))
+//   const doc = await words.create({ name: name }).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     if (doc.message.startsWith('E11000 duplicate key error collection')) {
+//       return E304('word-add-error', `Can't add word ${name} in to Dictionary ${name} is exist`)
+//     }
+//     return E500('word-add-error', doc)
+//   }
+
+//   // จริงๆ แล้วแบบนี้จะทำให้ส่วนของ statistics ทำงานเร็ว
+//   // แต่ถ้าเทียบกับปริมาณการใช้งาน add remove update อื่นๆ
+//   // ดังนั้นควรออกแบบใหม่ให้ statistics ไปดึงข้อมูลเองดีกว่า
+//   // ไม่งั้นการใช้งาน add remove update อื่นๆ ที่มีปริมาณสูงจะช้ามาก
+//   const stat = await statistics.findOne().catch((err) => err)
+//   if (stat && 'message' in stat) console.error(stat)
+//   if (!stat) {
+//     const raw = {
+//       total   : 1,
+//       first   : field_extract(doc),
+//       lastAdd : field_extract(doc),
+//       lastMod : field_extract(doc),
+//       lastDel : [],
+//       lastHigh: field_extract(doc),
+//       lastLow : field_extract(doc)
+//     }
+//     const result = await statistics.create(raw).catch((err) => err)
+//     if (result && 'message' in result) console.error(result)
+//   } else {
+//     // const raw = field_extract(doc)
+//     // if (stat.lastAdd.length > 99) await stat.lastAdd.pull(stat.lastAdd[99])
+//     // if (stat.lastMod.length > 99) await stat.lastMod.pull(stat.lastMod[99])
+//     // await stat.lastAdd.push(raw)
+//     // await stat.lastMod.push(raw)
+//     // await stat.lastAdd.sort((a, b) => b.create - a.create)
+//     // await stat.lastMod.sort((a, b) => b.modified - a.modified)
+//     // await stat.save()
+//     const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+//     if (lastAdd && 'message' in lastAdd) console.error(lastAdd)
+//     const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//     if (lastMod && 'message' in lastMod) console.error(lastMod)
+//     const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+//     if (lastHigh && 'message' in lastHigh) console.error(lastHigh)
+//     const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+//     if (lastLow && 'message' in lastLow) console.error(lastLow)
+//     stat.lastAdd  = field_extracts(lastAdd)
+//     stat.lastMod  = field_extracts(lastMod)
+//     stat.lastHigh = field_extracts(lastHigh)
+//     stat.lastLow  = field_extracts(lastLow)
+//     await stat.save()
+//   }
+//   // ข้างบนนี้จะตัดออกในอนาคต
+
+//   const raw = field_extract(doc)
+//   return R200('word-add-success', `Add word ${name} in to dictionary`, raw)
+// }
+
+
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ ลบคำศัพท์ 1 รายการจาก collection words                                       |
+// // └────────────────────────────────────────────────────────────────────────────┘
+
+// const remove = async (data) => {
+//   let { by, target } = data
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     return E304('word-remove-error', `Remove word by ${by} ${target} status code ${fillter.statusCode}`)
+//   }
+//   const doc = await words.findOne(fillter).catch((err) => err)
+//   if (doc && 'message' in doc) return E500('word-remove-error', doc)
+//   if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
+//   const raw = {
+//     create  : doc.create,
+//     modified: Math.floor(new Date().getTime()),
+//     counter : doc.counter,
+//     name    : doc.name,
+//     previous: Object.keys(doc.tree),
+//     next    : Object.keys(doc.tree[' '])
+//   }
+//   const del = await words.deleteOne(fillter).catch((err) => err)
+//   if (del && 'message' in del) return E500('word-remove-error', del)
+//   if ('deletedCount' in del) {
+//     if (del.deletedCount > 0) {
+//       const stat = await statistics.findOne().catch((err) => err)
+//       if (stat && 'message' in stat) return E500('word-remove-error', stat)
+//       if (stat.first.name == raw.name) {
+//         stat.first = {}
+//         const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+//         if (first && 'message' in first) console.error(first)
+//         if (!first) {
+//           console.log('Dictionary is empty')
+//         } else {
+//           stat.first = field_extract(first)
+//         }
+//       }
+//       if (stat.lastDel.length > 99) await stat.lastDel.pull(stat.lastDel[99])
+//       await stat.lastDel.push(raw)
+//       await stat.lastDel.sort((a, b) => b.modified - a.modified)
+//       await stat.save()
+//     }
+//   }
+//   return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
+// }
 
 
 
@@ -899,13 +1094,19 @@ class wordsIO {
     
     const respond = async (label, process, data) => {
       console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
-      const { event, code, message, result } = await process(data)
-      socket.emit(event, { code: code, message: message, result })
+      process(data).then((chunk) => {
+        const { event, code, message, result } = chunk
+        socket.emit(event, { code: code, message: message, result: result })
+      }).catch((err) => {
+        console.error(err)
+        socket.emit(`${label}-error`, { code: 500, message: err.message, result: null })
+      })
     }
     
     console.log(`Socket connection: ${socket.id}`)
     socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
     
+    socket.on('word-stat', async (data) => respond('word-stat', stat, data))
     socket.on('word-add', async (data) => respond('word-add', add, data))
     socket.on('word-remove', async (data) => respond('word-remove', remove, data))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))

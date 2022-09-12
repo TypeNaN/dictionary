@@ -5,8 +5,15 @@ import {thdate, thnum} from '../thdate.mjs'
 export default class {
   constructor(container, socket) {
     this.container = container
+    
+    // socket.emit('word-stat', null)
+
+    socket.on('word-stat-error', (data) => console.error(data))
     socket.on('word-add-error', (data) => console.error(data))
+    socket.on('word-mod-error', (data) => console.error(data))
     socket.on('word-remove-error', (data) => console.error(data))
+    
+    socket.on('word-stat-success', (data) => console.log(data))
     
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
@@ -14,7 +21,9 @@ export default class {
       // this.insertLastStat({ id: 'lastHigh', word: data.result, timestamps: 'modified' }, { duplicate: true })
       // this.insertLastStat({ id: 'lastLow', word: data.result, timestamps: 'modified' }, { duplicate: true })
     })
-    
+    socket.on('word-mod-success', (data) => {
+      this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
+    })
     socket.on('word-remove-success', (data) => {
       this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true })
     })
