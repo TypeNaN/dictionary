@@ -9,11 +9,15 @@ export default class {
     // socket.emit('word-stat', null)
 
     socket.on('word-stat-error', (data) => console.error(data))
+    socket.on('word-view-error', (data) => console.error(data))
+    socket.on('word-views-error', (data) => console.error(data))
     socket.on('word-add-error', (data) => console.error(data))
     socket.on('word-mod-error', (data) => console.error(data))
     socket.on('word-remove-error', (data) => console.error(data))
     
     socket.on('word-stat-success', (data) => console.log(data))
+    socket.on('word-view-success', (data) => console.log(data))
+    socket.on('word-views-success', (data) => console.log(data))
     
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
@@ -23,9 +27,15 @@ export default class {
     })
     socket.on('word-mod-success', (data) => {
       this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
+      this.insertLastStat({ id: 'lastHigh', word: data.result, timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastLow', word: data.result, timestamps: 'modified' }, { duplicate: true })
     })
     socket.on('word-remove-success', (data) => {
       this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true })
+      this.removeDeleted({ id: 'lastAdd', word: data.result })
+      this.removeDeleted({ id: 'lastMod', word: data.result })
+      this.removeDeleted({ id: 'lastHigh', word: data.result })
+      this.removeDeleted({ id: 'lastLow', word: data.result })
     })
   }
 
@@ -194,6 +204,15 @@ export default class {
     li.innerHTML += `<div class='word'>${word.name}</div>`
     li.innerHTML += `<div class='next'>${word.next.length}</div>`
     if (insert) { ul.insertBefore(li, ul.childNodes[0]) } else { ul.appendChild(li) }
+  }
+
+  removeDeleted = async (data) => {
+    const { id, word } = data
+    const section = document.getElementById(id)
+    const box = section.childNodes[1]
+    const value = box.childNodes[0]
+    const ul = value.childNodes[0]
+    this.removeDuplicate(ul, word.name)
   }
 
   removeDuplicate = (root, word) => {

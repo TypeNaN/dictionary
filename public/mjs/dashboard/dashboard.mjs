@@ -23,6 +23,9 @@ export default class extends abstractPage {
       /* Test only */
       // socket.emit('word-add', { name: 'ลอง' })
       // socket.emit('word-remove', { by:'name', target: 'ลอง' })
+      // socket.emit('word-view', { by: 'name', target: 'ลอง' })
+      // socket.emit('word-views', { skip: 0, end: 100, sort: true })
+      // socket.emit('word-views', { skip: 0, end: 100, sort: { key: 'name', by: 'desc' } })
     })
     
     socket.on('hello', (data) => console.log(data))

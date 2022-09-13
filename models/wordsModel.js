@@ -216,42 +216,42 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_view = async (req, res) => {
-  let { by, target } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`View word by ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  words.findOne(fillter).then((result) => {
-    console.log(`View word by ${by} ${target}`)
-    res.status(200).json(result)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
+// const rest_view = async (req, res) => {
+//   let { by, target } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`View word by ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   words.findOne(fillter).then((result) => {
+//     console.log(`View word by ${by} ${target}`)
+//     res.status(200).json(result)
+//   }).catch((err) => {
+//     console.error(err)
+//     res.status(500).send(err.message)
+//   })
+// }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เรียกดูคำศัพท์ทั้งหมดจาก collection words                                        |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ เรียกดูคำศัพท์ทั้งหมดจาก collection words                                        |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_views = async (req, res) => {
-  words.find().then((result) => {
-    console.log(`View all ${result.length} words`)
-    res.status(200).json(result)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
+// const rest_views = async (req, res) => {
+//   words.find().then((result) => {
+//     console.log(`View all ${result.length} words`)
+//     res.status(200).json(result)
+//   }).catch((err) => {
+//     console.error(err)
+//     res.status(500).send(err.message)
+//   })
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -795,23 +795,43 @@ const rest_removeNext = async (req, res) => {
 
 
 
-const R200 = (event, message, result) => {
-  console.log(message)
-  return { event: event, code: 200, message: message, result: result }
-}
-const E304 = (event, message) => {
-  console.log(message)
-  return { event: event, code: 304, message: message, result: null }
-}
-const E404 = (event, message) => {
-  console.error(message)
-  return { event: event, code: 404, message: message, result: null }
-}
-const E500 = (event, err) => {
-  console.error(err)
-  return { event: event, code: 500, message: err.message, result: null }
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ จัดการข้อมูลผ่าน socket requests                                               |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+class wordsIO {
+  constructor(socket) {
+    const respond = async (label, process, data) => {
+      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
+      process(data).then((chunk) => {
+        const { event, code, message, result } = chunk
+        socket.emit(event, { code: code, message: message, result: result })
+      }).catch((err) => {
+        console.error(err)
+        socket.emit(`${label}-error`, { code: 500, message: err.message, result: null })
+      })
+    }
+
+    console.log(`Socket connection: ${socket.id}`)
+    socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
+
+    socket.on('word-stat', async (data) => respond('word-stat', stat, data))
+    socket.on('word-view', async (data) => respond('word-view', view, data))
+    socket.on('word-views', async (data) => respond('word-views', views, data))
+    socket.on('word-add', async (data) => respond('word-add', add, data))
+    socket.on('word-remove', async (data) => respond('word-remove', remove, data))
+    socket.on('close', () => console.log('socket', socket.id, 'closed'))
+
+  }
 }
 
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ จัดการข้อมูลผ่าน https requests                                                |
+// └────────────────────────────────────────────────────────────────────────────┘
 
 const rest_stat = async (req, res) => {
   stat().then((data) => {
@@ -823,7 +843,6 @@ const rest_stat = async (req, res) => {
   })
 }
 
-
 const rest_add = async (req, res) => {
   add(req.params).then((data) => {
     if (data.code == 200) res.status(200).json(data.result)
@@ -832,6 +851,54 @@ const rest_add = async (req, res) => {
     console.error(err)
     res.status(500).send(err.message)
   })
+}
+
+const rest_view = async (req, res) => {
+  view(req.params).then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+const rest_views = async (req, res) => {
+  let { skip, end, key, by } = req.params
+  const sort = (key && by) ? { key: key, by: by } : false
+  views({ skip: skip, end: end, sort: sort }).then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ Template การตอบกลับ                                                         |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const R200 = (event, message, result) => {
+  console.log(message)
+  return { event: event, code: 200, message: message, result: result }
+}
+const E304 = (event, message) => {
+  console.log(message)
+  return { event: event, code: 304, message: message, result: null }
+}
+const E400 = (event, message) => {
+  console.error(message)
+  return { event: event, code: 400, message: message, result: null }
+}
+const E404 = (event, message) => {
+  console.error(message)
+  return { event: event, code: 404, message: message, result: null }
+}
+const E500 = (event, err) => {
+  console.error(err)
+  return { event: event, code: 500, message: err.message, result: null }
 }
 
 
@@ -854,9 +921,6 @@ const stat = async () => {
   if (lastLow && 'message' in lastLow) console.error(lastLow)
   const lastDel = await wordsDeleted.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
   if (lastDel && 'message' in lastDel) console.error(lastDel)
-  
-  console.log(field_stat_extracts(lastDel));
-
   const data = {
     total    : total,
     first    : field_extract(first),
@@ -866,8 +930,7 @@ const stat = async () => {
     lastHigh : field_extracts(lastHigh),
     lastLow  : field_extracts(lastLow)
   }
-  return R200('word-stat-success', 'success', data)
-  
+  return R200('word-stat-success', 'Get words statistics success', data)
 }
 
 
@@ -891,6 +954,54 @@ const add = async (data) => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const view = async (data) => {
+  let { by, target } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-view-error', `View word by ${by} ${target} status code ${fillter.statusCode}`)
+  return words.findOne(fillter).then((doc) => {
+    if (!doc) return E404('word-view-error', `View word ${by} ${target} don't exist`, doc)
+    return R200('word-view-success', `View word ${by} ${target} from dictionary`, doc)
+  }).catch((err) => {
+    return E500('word-view-error', err)
+  })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เรียกดูคำศัพท์ทั้งหมดจาก collection words                                        |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const views = async (data) => {
+  let { skip, end, sort } = data
+  let { key, by } = sort
+  if (typeof skip !== Number || skip < 0) skip = 0
+  if (typeof end !== Number || end < skip) end = skip + 100 
+  if (sort) {
+    if (!key) key = 'create'
+    if (!by) by = 'asc'
+    return words.find().sort({ [key]: by }).skip(skip).limit(end).then((docs) => {
+      if (!docs) return E404('word-views-error', `View words is empty`, docs) 
+      return R200('word-views-success', `View words skip ${skip} end ${end} sort ${sort.key} by ${sort.by}`, docs)
+    }).catch((err) => {
+      return E500('word-views-error', err)
+    })
+  }
+
+  return words.find().skip(skip).limit(end).then((docs) => {
+    if (!docs) return E404('word-views-error', `View words is empty`, docs)
+    return R200('word-views-success', `View words skip ${skip} end ${end}`, docs)
+  }).catch((err) => {
+    return E500('word-views-error', err)
+  })
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ ลบคำศัพท์ 1 รายการจาก collection words                                       |
 // └────────────────────────────────────────────────────────────────────────────┘
 
@@ -899,9 +1010,7 @@ const remove = async (data) => {
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
   fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    return E304('word-remove-error', `Remove word by ${by} ${target} status code ${fillter.statusCode}`)
-  }
+  if ('statusCode' in fillter) return E400('word-remove-error', `Remove word by ${by} ${target} status code ${fillter.statusCode}`)
   return words.findOne(fillter).then((doc) => {
     if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't exist`)
     const raw = {
@@ -931,7 +1040,7 @@ const remove = async (data) => {
   }).catch((err) => {
     return E500('word-remove-error', err)
   })
-
+}
 
 
   // const doc = await words.findOne(fillter).catch((err) => err)
@@ -968,7 +1077,7 @@ const remove = async (data) => {
   //   }
   // }
   // return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
-}
+
 
 
 
@@ -1082,37 +1191,6 @@ const remove = async (data) => {
 //   }
 //   return R200('word-remove-success', `Remove word ${target} from dictionary`, raw)
 // }
-
-
-
-class wordsIO {
-  constructor(socket) {
-
-    // ┌────────────────────────────────────────────────────────────────────────────┐
-    // │ เส้นทางบริการ socket                                                          |
-    // └────────────────────────────────────────────────────────────────────────────┘
-    
-    const respond = async (label, process, data) => {
-      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
-      process(data).then((chunk) => {
-        const { event, code, message, result } = chunk
-        socket.emit(event, { code: code, message: message, result: result })
-      }).catch((err) => {
-        console.error(err)
-        socket.emit(`${label}-error`, { code: 500, message: err.message, result: null })
-      })
-    }
-    
-    console.log(`Socket connection: ${socket.id}`)
-    socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
-    
-    socket.on('word-stat', async (data) => respond('word-stat', stat, data))
-    socket.on('word-add', async (data) => respond('word-add', add, data))
-    socket.on('word-remove', async (data) => respond('word-remove', remove, data))
-    socket.on('close', () => console.log('socket', socket.id, 'closed'))
-
-  }
-}
 
 
 module.exports = {
