@@ -14,31 +14,31 @@ const runtime = (start) => {
 }
 
 const COLOR = {
-  Reset: "\x1b[0m",
-  Bright: "\x1b[1m",
-  Dim: "\x1b[2m",
+  Reset     : "\x1b[0m",
+  Bright    : "\x1b[1m",
+  Dim       : "\x1b[2m",
   Underscore: "\x1b[4m",
-  Blink: "\x1b[5m",
-  Reverse: "\x1b[7m",
-  Hidden: "\x1b[8m",
+  Blink     : "\x1b[5m",
+  Reverse   : "\x1b[7m",
+  Hidden    : "\x1b[8m",
 
-  FgBlack: "\x1b[30m",
-  FgRed: "\x1b[31m",
-  FgGreen: "\x1b[32m",
-  FgYellow: "\x1b[33m",
-  FgBlue: "\x1b[34m",
-  FgMagenta: "\x1b[35m",
-  FgCyan: "\x1b[36m",
-  FgWhite: "\x1b[37m",
+  FgBlack   : "\x1b[30m",
+  FgRed     : "\x1b[31m",
+  FgGreen   : "\x1b[32m",
+  FgYellow  : "\x1b[33m",
+  FgBlue    : "\x1b[34m",
+  FgMagenta : "\x1b[35m",
+  FgCyan    : "\x1b[36m",
+  FgWhite   : "\x1b[37m",
 
-  BgBlack: "\x1b[40m",
-  BgRed: "\x1b[41m",
-  BgGreen: "\x1b[42m",
-  BgYellow: "\x1b[43m",
-  BgBlue: "\x1b[44m",
-  BgMagenta: "\x1b[45m",
-  BgCyan: "\x1b[46m",
-  BgWhite: "\x1b[47m"
+  BgBlack   : "\x1b[40m",
+  BgRed     : "\x1b[41m",
+  BgGreen   : "\x1b[42m",
+  BgYellow  : "\x1b[43m",
+  BgBlue    : "\x1b[44m",
+  BgMagenta : "\x1b[45m",
+  BgCyan    : "\x1b[46m",
+  BgWhite   : "\x1b[47m"
 }
 
 
@@ -58,9 +58,9 @@ const RateLimit = require('express-rate-limit')
 const app			  = express()
 
 const credentials	= {
-  key: fs.readFileSync(path.resolve(__dirname, config.sslKey), 'utf8'),
+  key : fs.readFileSync(path.resolve(__dirname, config.sslKey), 'utf8'),
   cert: fs.readFileSync(path.resolve(__dirname, config.sslCert), 'utf8'),
-  ca: fs.readFileSync(path.resolve(__dirname, config.sslCa), 'utf8')
+  ca  : fs.readFileSync(path.resolve(__dirname, config.sslCa), 'utf8')
 }
 const httpsServer	= https.createServer(credentials, app)
 const io					= require('socket.io')(httpsServer)
@@ -151,10 +151,10 @@ app.use(compression({
 // set up rate limiter: maximum of five requests per minute
 // apply rate limiter to all requests
 app.use(RateLimit({
-  windowMs: 1 * 60 * 1000,  // 1 minutes
-  max: 100,                 // Limit each IP to 100 requests per `window` (here, per 1 minutes)
-  standardHeaders: true,    // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false      // Disable the `X-RateLimit-*` headers
+  windowMs        : 1 * 60 * 1000,  // 1 minutes
+  max             : 100,            // Limit each IP to 100 requests per `window` (here, per 1 minutes)
+  standardHeaders : true,           // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders   : false           // Disable the `X-RateLimit-*` headers
 }))
 
 
@@ -236,15 +236,15 @@ httpsServer.listen(app.get('port_https'), () => {
   
   mongoose.connect(
     `mongodb://${config.dbUser}:${config.dbPass}@${config.dbUrl}/${config.dbUse}`, {
-      retryWrites: true,
-      w: 'majority',
-      //useNewUrlParser: true, // Boilerplate for Mongoose 5.x
-      useUnifiedTopology: true,
-      autoIndex: true, // Build indexes
-      maxPoolSize: 1, // Maintain up to 1 socket connections
-      serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      family: 4 // Use IPv4, skip trying IPv6
+      w                       : 'majority',
+      //useNewUrlParser       : true,   // Boilerplate for Mongoose 5.x
+      retryWrites             : true,
+      useUnifiedTopology      : true,
+      autoIndex               : true,   // Build indexes
+      serverSelectionTimeoutMS: 10000,  // Keep trying to send operations for 5 seconds
+      socketTimeoutMS         : 45000,  // Close sockets after 45 seconds of inactivity
+      maxPoolSize             : 1,      // Maintain up to 1 socket connections
+      family                  : 4       // Use IPv4, skip trying IPv6
     }, (err) => {
       if (err) throw err
       console.info("✔ MongoDB database ready to use")
@@ -269,7 +269,6 @@ const exitHandler = (options, err) => {
 * ${dtt(new Date())}
 * รวมเวลา ${runtime(born)}
 ******************************************************************************\n\n`)
-      // console.error(err.stack)
     } else {
       if (err === 'SIGINT') {
         console.log(`\n\n

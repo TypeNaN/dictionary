@@ -28,6 +28,7 @@ export default class extends abstractPage {
       // socket.emit('word-views', { skip: 0, end: 100, sort: { key: 'name', by: 'desc' } })
       // socket.emit('word-search', { name: 'ก' })
       // socket.emit('word-patch', {params: { by: 'name', target: 'หนัง' }, data: { lang: "th" }})
+      // socket.emit('word-patch-key', { params: { by: 'name', target: 'ก้าง', key: 'ลอง' }, data: { age: "โบราณ" }})
     })
     
     socket.on('hello', (data) => console.log(data))

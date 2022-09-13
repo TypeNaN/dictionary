@@ -350,33 +350,33 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ แก้ไขข้อมูลในคีย์ที่กำหนดของคำศัพท์ 1 รายการจาก collection words                    |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ แก้ไขข้อมูลในคีย์ที่กำหนดของคำศัพท์ 1 รายการจาก collection words                    |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_patchKey = async (req, res) => {
-  const data = req.body
-  let { by, target, key } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  key = remove_spacails(decodeURIComponent(key))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Patch word by ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  words.findOneAndUpdate(fillter, {[key]: data[key] }, {
-    new: false,
-    upsert: true,
-    rawResult: true
-  }).then((result) => {
-    console.log(`Patch word by ${by} ${target} key ${key} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}${hline}Old data ${JSON.stringify(result.value)}${hline}Patch ${JSON.stringify(data)}${hline}`)
-    res.json({ original: result.value, patch: data })
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
+// const rest_patchKey = async (req, res) => {
+//   const data = req.body
+//   let { by, target, key } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   key = remove_spacails(decodeURIComponent(key))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Patch word by ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   words.findOneAndUpdate(fillter, {[key]: data[key] }, {
+//     new: false,
+//     upsert: true,
+//     rawResult: true
+//   }).then((result) => {
+//     console.log(`Patch word by ${by} ${target} key ${key} existing ${result.lastErrorObject.updatedExisting} updated ${result.ok}${hline}Old data ${JSON.stringify(result.value)}${hline}Patch ${JSON.stringify(data)}${hline}`)
+//     res.json({ original: result.value, patch: data })
+//   }).catch((err) => {
+//     console.error(err)
+//     res.status(500).send(err.message)
+//   })
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -824,6 +824,7 @@ class wordsIO {
     socket.on('word-add', async (data) => respond('word-add', add, data))
     socket.on('word-remove', async (data) => respond('word-remove', remove, data))
     socket.on('word-patch', async (datas) => respond('word-patch', patch, [datas.params, datas.data]))
+    socket.on('word-patch-key', async (datas) => respond('word-patch-key', patchKey, [datas.params, datas.data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -895,9 +896,18 @@ const rest_remove = async (req, res) => {
   })
 }
 
-
 const rest_patch = async (req, res) => {
   patch(req.params, req.body).then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+const rest_patchKey = async (req, res) => {
+  patchKey(req.params, req.body).then((data) => {
     if (data.code == 200) res.status(200).json(data.result)
     else res.status(data.code).send(data.message)
   }).catch((err) => {
@@ -916,15 +926,15 @@ const R200 = (event, message, result) => {
   return { event: event, code: 200, message: message, result: result }
 }
 const E304 = (event, message) => {
-  console.log(message)
+  console.warn(message)
   return { event: event, code: 304, message: message, result: null }
 }
 const E400 = (event, message) => {
-  console.error(message)
+  console.warn(message)
   return { event: event, code: 400, message: message, result: null }
 }
 const E404 = (event, message) => {
-  console.error(message)
+  console.warn(message)
   return { event: event, code: 404, message: message, result: null }
 }
 const E500 = (event, err) => {
@@ -1022,7 +1032,6 @@ const views = async (data) => {
       return E500('word-views-error', err)
     })
   }
-
   return words.find().skip(skip).limit(end).then((docs) => {
     if (!docs) return E404('word-views-error', `View words are not found`, docs)
     return R200('word-views-success', `View words skip ${skip} end ${end}`, docs)
@@ -1096,10 +1105,6 @@ const remove = async (data) => {
 // ไม่มีการตรวจสอบ data แบบนี้เป็นอันตรายอย่างมาก ต้องการ function verify data ด่วนๆ
 
 const patch = async (params, data) => {
-
-  console.log(JSON.stringify(params));
-  console.log(data);
-
   let { by, target } = params
   by = remove_spacails(decodeURIComponent(by))
   target = remove_spacails(decodeURIComponent(target))
@@ -1114,13 +1119,40 @@ const patch = async (params, data) => {
     let message = `Patch word by ${by} ${target} existing ${doc.lastErrorObject.updatedExisting} are updated ${doc.ok}${hline}`
     message += `Old data ${JSON.stringify(doc.value)}${hline}`
     message += `Patch ${JSON.stringify(data)}${hline}`
-    return R200('word-patch-success',message,{ original: doc.value, patch: data })
+    return R200('word-patch-success', message, { original: doc.value, patch: data })
   }).catch((err) => {
     return E500('word-patch-error', err)
   })
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลในคีย์ที่กำหนดของคำศัพท์ 1 รายการจาก collection words                    |
+// └────────────────────────────────────────────────────────────────────────────┘
+// ไม่มีการตรวจสอบ data แบบนี้เป็นอันตรายอย่างมาก ต้องการ function verify data ด่วนๆ
+
+const patchKey = async (params, data) => {
+  let { by, target, key } = params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  key = remove_spacails(decodeURIComponent(key))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-patch-key-error', `Patch word by ${by} ${target} ${key} status code ${fillter.statusCode} bad request`)
+  return words.findOneAndUpdate(fillter, { [key]: data[key] }, {
+    new: false,
+    upsert: false,
+    rawResult: true
+  }).then((doc) => {
+    if (!doc.lastErrorObject.updatedExisting) return E404('word-patch-key-error', `Can't patch word ${target} because ${target} don't existing`)
+    if (!doc[key]) return E304('word-patch-key-error', `Can't patch word ${target} ${key} because $ ${key}  don't existing`)
+    let message = `Patch word by ${by} ${target} ${key} existing ${doc.lastErrorObject.updatedExisting} are updated ${doc.ok}${hline}`
+    message += `Old data ${JSON.stringify(doc.value)}${hline}`
+    message += `Patch ${JSON.stringify(data)}${hline}`
+    return R200('word-patch-key-success', message, { original: doc.value[key], patch: data })
+  }).catch((err) => {
+    return E500('word-patch-key-error', err)
+  })
+}
 
 
 
