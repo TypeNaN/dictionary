@@ -1,30 +1,16 @@
 const born = new Date()
 const thday = new Array("อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์")
 const thmonth = new Array("มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม")
-const dayofmonth = new Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+const BuddhistYear = 543
 
-const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} ปีพุทธศักราช ${(d.getFullYear() + 543)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
-const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + 543)}-${(d.toLocaleTimeString('TH'))}`
+const dtt = (d) => `วัน${thday[d.getDay()]} ที่ ${d.getDate()} เดือน${thmonth[d.getMonth()]} ปีพุทธศักราช ${(d.getFullYear() + BuddhistYear)} เวลา ${(d.toLocaleTimeString('TH'))} นาฬิกา`
+const sdtt = (d) => `${d.getDate()}/${d.getMonth() + 1}/${(d.getFullYear() + BuddhistYear)}-${(d.toLocaleTimeString('TH'))}`
 
 const runtime = (start) => {
-  const now = new Date()
-  const dyy = now.getFullYear() - start.getFullYear()
-  const dmm = now.getMonth() < start.getMonth()
-    ? (12 + now.getMonth()) - start.getMonth()
-    : now.getMonth() - start.getMonth()
-  const ddd = now.getDate() < start.getDate()
-    ? (dayofmonth[now.getDate()] + now.getDate()) - start.getDate()
-    : now.getDate() - start.getDate()
-  const dhh = now.getHours() < start.getHours()
-    ? (24 + now.getHours()) - start.getHours()
-    : now.getHours() - start.getHours()
-  const dMM = now.getMinutes() < start.getMinutes()
-    ? (60 + now.getMinutes()) - start.getMinutes()
-    : now.getMinutes() - start.getMinutes()
-  const dss = now.getSeconds() < start.getSeconds()
-    ? (60 + now.getSeconds()) - start.getSeconds()
-    : now.getSeconds() - start.getSeconds()
-  return `${dyy} ปี ${dmm} เดือน ${ddd} วัน ${dhh} ชั่วโมง ${dMM} นาที ${dss} วินาที`
+  const since = 1970
+  const timezone = 7
+  const diff = new Date(new Date() - start)
+  return `${since - diff.getFullYear()} ปี ${diff.getMonth()} เดือน ${diff.getDate() - 1} วัน ${timezone - diff.getHours()} ชั่วโมง ${diff.getMinutes()} นาที ${diff.getSeconds()} วินาที`
 }
 
 const COLOR = {
@@ -117,7 +103,7 @@ new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
                 result = result[0].replace(`${__dirname}/`, '')
               }
               result = result.split(':')
-              initiator = COLOR.FgBlue + result[0] + COLOR.Reset + ' [' + COLOR.FgYellow + row + COLOR.Reset + ':' + COLOR.FgMagenta + col + COLOR.Reset + ']'
+              initiator = `${COLOR.FgBlue}${result[0]}${COLOR.Reset} [${COLOR.FgYellow}${row}${COLOR.Reset}:${COLOR.FgMagenta}${col}${COLOR.Reset}]`
               initiator_file = `${result[0]} [${row}:${col}]`
               break
             }
