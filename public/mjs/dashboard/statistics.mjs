@@ -15,11 +15,13 @@ export default class {
     socket.on('word-add-error', (data) => console.error(data))
     socket.on('word-mod-error', (data) => console.error(data))
     socket.on('word-remove-error', (data) => console.error(data))
+    socket.on('word-patch-error', (data) => console.error(data))
     
     socket.on('word-stat-success', (data) => console.log(data))
     socket.on('word-view-success', (data) => console.log(data))
     socket.on('word-views-success', (data) => console.log(data))
     socket.on('word-search-success', (data) => console.log(data))
+    socket.on('word-patch-success', (data) => console.log(data))
     
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
