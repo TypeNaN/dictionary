@@ -15,6 +15,7 @@ export default class {
     socket.on('word-remove-error', (data) => console.error(data))
     socket.on('word-patch-error', (data) => console.error(data))
     socket.on('word-patch-key-error', (data) => console.error(data))
+    socket.on('word-add-prev-error', (data) => console.error(data))
     
     socket.on('word-stat-success', (data) => this.renderStat(data.result))
     socket.on('word-view-success', (data) => console.log(data))
@@ -22,6 +23,7 @@ export default class {
     socket.on('word-search-success', (data) => console.log(data))
     socket.on('word-patch-success', (data) => console.log(data))
     socket.on('word-patch-key-success', (data) => console.log(data))
+    socket.on('word-add-prev-success', (data) => console.log(data))
     
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
@@ -52,9 +54,9 @@ export default class {
 
   render = async (socket) => {
     this.mockup()
-    // support fetch and socket
-    // this.fetch()
-    socket.emit('word-stat', null)
+    // Can use fetch or socket
+    this.fetch()
+    // socket.emit('word-stat')
     return this
   }
 

@@ -379,38 +379,38 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_addPrev = async (req, res) => {
-  let { by, target, previous } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.log(`Can't add ${previous} as previous of ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-    const newDoc = await doc.save()
-    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
-    return res.json(newDoc)
-  }
-  console.log(`Can't add ${previous} as previous of ${target} because ${previous} existing`)
-  res.status(304).end()
-}
+// const rest_addPrev = async (req, res) => {
+//   let { by, target, previous } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const doc = await words.findOne(fillter).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     console.log(`Can't add ${previous} as previous of ${target} because ${target} don't exist`)
+//     return res.status(304).end()
+//   }
+//   if (!doc.get(`tree.${previous}`)) {
+//     const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+//     const newDoc = await doc.save()
+//     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+//     return res.json(newDoc)
+//   }
+//   console.log(`Can't add ${previous} as previous of ${target} because ${previous} existing`)
+//   res.status(304).end()
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -817,14 +817,15 @@ class wordsIO {
     console.log(`Socket connection: ${socket.id}`)
     socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
 
-    socket.on('word-stat', async (data) => respond('word-stat', stat, data))
-    socket.on('word-view', async (data) => respond('word-view', view, data))
-    socket.on('word-views', async (data) => respond('word-views', views, data))
-    socket.on('word-search', async (data) => respond('word-search', search, data))
-    socket.on('word-add', async (data) => respond('word-add', add, data))
-    socket.on('word-remove', async (data) => respond('word-remove', remove, data))
+    socket.on('word-stat', async (data) => respond('word-stat', stat, [data]))
+    socket.on('word-view', async (data) => respond('word-view', view, [data]))
+    socket.on('word-views', async (data) => respond('word-views', views, [data]))
+    socket.on('word-search', async (data) => respond('word-search', search, [data]))
+    socket.on('word-add', async (data) => respond('word-add', add, [data]))
+    socket.on('word-remove', async (data) => respond('word-remove', remove, [data]))
     socket.on('word-patch', async (datas) => respond('word-patch', patch, [datas.params, datas.data]))
     socket.on('word-patch-key', async (datas) => respond('word-patch-key', patchKey, [datas.params, datas.data]))
+    socket.on('word-add-prev', async (data) => respond('word-add-prev', addPrev, [data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -908,6 +909,16 @@ const rest_patch = async (req, res) => {
 
 const rest_patchKey = async (req, res) => {
   patchKey(req.params, req.body).then((data) => {
+    if (data.code == 200) res.status(200).json(data.result)
+    else res.status(data.code).send(data.message)
+  }).catch((err) => {
+    console.error(err)
+    res.status(500).send(err.message)
+  })
+}
+
+const rest_addPrev = async (req, res) => {
+  addPrev(req.params).then((data) => {
     if (data.code == 200) res.status(200).json(data.result)
     else res.status(data.code).send(data.message)
   }).catch((err) => {
@@ -1154,6 +1165,30 @@ const patchKey = async (params, data) => {
   })
 }
 
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                            |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const addPrev = async (data) => {
+  let { by, target, previous } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-patch-key-error', `Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode} bad request`)
+  return words.findOne(fillter).then(async (doc) => {
+    if (!doc) return E304('word-add-prev-error', `Can't word ${previous} as previous of ${by} ${target} because ${target} don't existing`)
+    if (!doc.get(`tree.${previous}`)) {
+      const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }).save()
+      return R200('word-add-prev-success', `Add word ${previous} as previous of ${target} successfully`, result)
+    } else {
+      return E304('word-add-prev-error', `Can't add ${previous} as previous of ${target} because ${previous} existing`)
+    }
+  }).catch((err) => {
+    return E500('word-add-prev-error', err)
+  })
+}
 
 
 

@@ -210,8 +210,11 @@
   display: none;
 }
 #nav-main[toggle-sidebar-expanded="false"]~ul>li {
-  content: none;
+  display: none;
 }
 #nav-main[toggle-sidebar-expanded="true"]~ul>li {
-  content: initial;
+  display: block;
+}
+#nav-main[toggle-sidebar-expanded="false"]~ul>li.toggle-sidebar {
+  display: block;
 }

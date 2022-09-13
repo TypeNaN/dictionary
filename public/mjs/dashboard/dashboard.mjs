@@ -19,8 +19,9 @@ export default class extends abstractPage {
     header.innerHTML = 'Dictionary'
 
     new navMain(left).render()
-    new statistics(content, socket).fetch().then(() => {
+    new statistics(content, socket).render(socket).then((me) => {
       /* Test only */
+      // socket.emit('word-stat')
       // socket.emit('word-add', { name: 'ลอง' })
       // socket.emit('word-remove', { by:'name', target: 'ลอง' })
       // socket.emit('word-view', { by: 'name', target: 'ลอง' })
@@ -29,6 +30,7 @@ export default class extends abstractPage {
       // socket.emit('word-search', { name: 'ก' })
       // socket.emit('word-patch', {params: { by: 'name', target: 'หนัง' }, data: { lang: "th" }})
       // socket.emit('word-patch-key', { params: { by: 'name', target: 'ก้าง', key: 'ลอง' }, data: { age: "โบราณ" }})
+      // socket.emit('word-add-prev', { by: 'name', target: 'แสดง', previous: 'การ' }) 
     })
     
     socket.on('hello', (data) => console.log(data))
