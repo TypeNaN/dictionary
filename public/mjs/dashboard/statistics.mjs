@@ -11,6 +11,7 @@ export default class {
     socket.on('word-stat-error', (data) => console.error(data))
     socket.on('word-view-error', (data) => console.error(data))
     socket.on('word-views-error', (data) => console.error(data))
+    socket.on('word-search-error', (data) => console.error(data))
     socket.on('word-add-error', (data) => console.error(data))
     socket.on('word-mod-error', (data) => console.error(data))
     socket.on('word-remove-error', (data) => console.error(data))
@@ -18,6 +19,7 @@ export default class {
     socket.on('word-stat-success', (data) => console.log(data))
     socket.on('word-view-success', (data) => console.log(data))
     socket.on('word-views-success', (data) => console.log(data))
+    socket.on('word-search-success', (data) => console.log(data))
     
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
