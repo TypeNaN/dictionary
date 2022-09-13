@@ -835,97 +835,29 @@ class wordsIO {
 // │ จัดการข้อมูลผ่าน https requests                                                |
 // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_stat = async (req, res) => {
-  stat().then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
+const SUCCESS = (res, data) => {
+  if (data.code == 200) res.status(200).json(data.result)
+  else res.status(data.code).send(data.message)
+}
+const ERROR = (res, err) => {
+  console.error(err)
+  res.status(500).send(err.message)
 }
 
-const rest_add = async (req, res) => {
-  add(req.params).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_view = async (req, res) => {
-  view(req.params).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_views = async (req, res) => {
+const rest_stat   = async (req, res) => stat().then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_search = async (req, res) => search(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_view   = async (req, res) => view(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_views  = async (req, res) => {
   let { skip, end, key, by } = req.params
   const sort = (key && by) ? { key: key, by: by } : false
-  views({ skip: skip, end: end, sort: sort }).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
+  views({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
 
-const rest_search = async (req, res) => {
-  search(req.params).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_remove = async (req, res) => {
-  remove(req.params).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_patch = async (req, res) => {
-  patch(req.params, req.body).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_patchKey = async (req, res) => {
-  patchKey(req.params, req.body).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
-
-const rest_addPrev = async (req, res) => {
-  addPrev(req.params).then((data) => {
-    if (data.code == 200) res.status(200).json(data.result)
-    else res.status(data.code).send(data.message)
-  }).catch((err) => {
-    console.error(err)
-    res.status(500).send(err.message)
-  })
-}
+const rest_add      = async (req, res) => add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patch    = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchKey = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_addPrev  = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_remove   = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -958,31 +890,99 @@ const E500 = (event, err) => {
 // │ เรียกดูสรุปคำศัพท์ทั้งหมดจาก collection words                                     |
 // └────────────────────────────────────────────────────────────────────────────┘
 
+//// stat async await
+// const stat = async () => {
+//   const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
+//   if (first && 'message' in first) return E500('word-stat-error', first)
+//   if (!first) return E404('word-stat-error', 'Dictionary is empty')
+//   const total = await words.countDocuments()
+//   const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
+//   if (lastAdd && 'message' in lastAdd) console.error(lastAdd)
+//   const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//   if (lastMod && 'message' in lastMod) console.error(lastMod)
+//   const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
+//   if (lastHigh && 'message' in lastHigh) console.error(lastHigh)
+//   const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
+//   if (lastLow && 'message' in lastLow) console.error(lastLow)
+//   const lastDel = await wordsDeleted.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//   if (lastDel && 'message' in lastDel) console.error(lastDel)
+//   const data = {
+//     total    : total,
+//     first    : field_extract(first),
+//     lastAdd  : field_extracts(lastAdd),
+//     lastMod  : field_extracts(lastMod),
+//     lastDel  : field_stat_extracts(lastDel),
+//     lastHigh : field_extracts(lastHigh),
+//     lastLow  : field_extracts(lastLow)
+//   }
+//   return R200('word-stat-success', 'Get words statistics success', data)
+// }
+
+//// stat full async and hell
+// const stat = async () => {
+//   let total
+//   let first
+//   let lastAdd
+//   let lastMod
+//   let lastHigh
+
+//   return words.findOne().sort({ create: 'asc' }).then((doc) => {
+//     if (!doc) return E404('word-stat-error', 'Dictionary is empty')
+//     first = doc
+//     return words.countDocuments().then((num) => {
+//       total = num
+//       return words.find().sort({ create: 'desc' }).limit(100).then((doc) => {
+//         lastAdd = doc
+//         return words.find().sort({ modified: 'desc' }).limit(100).then((doc) => {
+//           lastMod = doc
+//           return words.find().sort({ counter: 'desc' }).limit(100).then((doc) => {
+//             lastHigh = doc
+//             return words.find().sort({ counter: 'asc' }).limit(100).then((doc) => {
+//               lastLow = doc
+//               return wordsDeleted.find().sort({ modified: 'desc' }).limit(100).then((doc) => {
+//                 lastDel = doc
+//                 const data = {
+//                   total    : total,
+//                   first    : field_extract(first),
+//                   lastAdd  : field_extracts(lastAdd),
+//                   lastMod  : field_extracts(lastMod),
+//                   lastDel  : field_stat_extracts(lastDel),
+//                   lastHigh : field_extracts(lastHigh),
+//                   lastLow  : field_extracts(lastLow)
+//                 }
+//                 return R200('word-stat-success', 'Get words statistics success', data)
+//               }).catch((err) => E500('word-stat-error', err))
+//             }).catch((err) => E500('word-stat-error', err))
+//           }).catch((err) => E500('word-stat-error', err))
+//         }).catch((err) => E500('word-stat-error', err))
+//       }).catch((err) => E500('word-stat-error', err))
+//     }).catch((err) => E500('word-stat-error', err))
+//   }).catch((err) => E500('word-stat-error', err))
+// }
+
+
+//// stat full async by Promise
 const stat = async () => {
-  const first = await words.findOne().sort({ create: 'asc' }).catch((err) => err)
-  if (first && 'message' in first) return E500('word-stat-error', first)
-  if (!first) return E404('word-stat-error', 'Dictionary is empty')
-  const total = await words.countDocuments()
-  const lastAdd = await words.find().sort({ create: 'desc' }).limit(100).catch((err) => err)
-  if (lastAdd && 'message' in lastAdd) console.error(lastAdd)
-  const lastMod = await words.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-  if (lastMod && 'message' in lastMod) console.error(lastMod)
-  const lastHigh = await words.find().sort({ counter: 'desc' }).limit(100).catch((err) => err)
-  if (lastHigh && 'message' in lastHigh) console.error(lastHigh)
-  const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
-  if (lastLow && 'message' in lastLow) console.error(lastLow)
-  const lastDel = await wordsDeleted.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
-  if (lastDel && 'message' in lastDel) console.error(lastDel)
-  const data = {
-    total    : total,
-    first    : field_extract(first),
-    lastAdd  : field_extracts(lastAdd),
-    lastMod  : field_extracts(lastMod),
-    lastDel  : field_stat_extracts(lastDel),
-    lastHigh : field_extracts(lastHigh),
-    lastLow  : field_extracts(lastLow)
-  }
-  return R200('word-stat-success', 'Get words statistics success', data)
+  return Promise.all([
+    words.countDocuments(),
+    words.findOne().sort({ create: 'asc' }),
+    words.find().sort({ create: 'desc' }).limit(100),
+    words.find().sort({ modified: 'desc' }).limit(100),
+    words.find().sort({ counter: 'desc' }).limit(100),
+    words.find().sort({ counter: 'asc' }).limit(100),
+    wordsDeleted.find().sort({ modified: 'desc' }).limit(100)
+  ]).then(([total, first, lastAdd, lastMod, lastHigh, lastLow, lastDel]) => {
+    const data = {
+      total   : total,
+      first   : field_extract(first),
+      lastAdd : field_extracts(lastAdd),
+      lastMod : field_extracts(lastMod),
+      lastHigh: field_extracts(lastHigh),
+      lastLow : field_extracts(lastLow),
+      lastDel : field_stat_extracts(lastDel)
+    }
+    return R200('word-stat-success', 'Get words statistics success', data)
+  }).catch((err) => E500('word-stat-error', err))
 }
 
 
