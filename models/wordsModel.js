@@ -413,73 +413,73 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_modPrev = async (req, res) => {
-  let { by, target, previous, edit, merge } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  edit = remove_spacails(decodeURIComponent(edit))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Modity word ${previous} to ${edit} from previous of ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const docA = await words.findOne(fillter).catch((err) => err)
-  if (docA && 'message' in docA) {
-    console.error(docA)
-    return res.status(500).send(docA.message)
-  }
-  if (!docA) {
-    console.error(`Can't modify word ${previous} to ${edit} from previous of ${target} because ${target} don't exist`) 
-    return res.status(304).end()
-  }
-  if (!docA.get(`tree.${edit}`)) {
-    if (!docA.get(`tree.${previous}`)) {
-      await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-    } else {
-      const treeA = docA.get('tree')
-      await docA.$set(`tree.${edit}`, treeA[previous])
-      await docA.$set(`tree.${previous}`, undefined)
-    }
-    await docA.save()
-  } else {
-    if (!docA.get(`tree.${previous}`)) {
-      if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-        await docA.$set(`tree.${previous}`, undefined)
-        await docA.save()
-        console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
-        return res.json(docA.tree)
-      }
-      console.log(`Can't modity word ${previous} to ${edit} from previous of ${target} because ${edit} exist`)
-      return res.status(304).end()
-    } else {
-      if (!docA.get(`tree.${edit}.${' '}`)) {
-        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-      }
-      const treeAprev = docA.get(`tree.${previous}`)
-      const treeAedit = docA.get(`tree.${edit}`)
-      const keyEdit = Object.keys(treeAedit)
-      if (merge === 'merge') {
-        Object.keys(treeAprev).forEach(key => {
-          if (keyEdit.includes(key)) {
-            treeAedit[key].freq = treeAedit[key].freq > treeAprev[key].freq ? treeAedit[key].freq : treeAprev[key].freq
-          } else {
-            treeAedit[key] = treeAprev[key]
-          }
-        })
-      }
-      await docA.$set(`tree.${previous}`, undefined)
-      await docA.save()
-    }
-  }
-  console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)  
-  res.json(docA.tree)
-}
+// const rest_modPrev = async (req, res) => {
+//   let { by, target, previous, edit, merge } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   edit = remove_spacails(decodeURIComponent(edit))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Modity word ${previous} to ${edit} from previous of ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const docA = await words.findOne(fillter).catch((err) => err)
+//   if (docA && 'message' in docA) {
+//     console.error(docA)
+//     return res.status(500).send(docA.message)
+//   }
+//   if (!docA) {
+//     console.error(`Can't modify word ${previous} to ${edit} from previous of ${target} because ${target} don't exist`) 
+//     return res.status(304).end()
+//   }
+//   if (!docA.get(`tree.${edit}`)) {
+//     if (!docA.get(`tree.${previous}`)) {
+//       await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+//     } else {
+//       const treeA = docA.get('tree')
+//       await docA.$set(`tree.${edit}`, treeA[previous])
+//       await docA.$set(`tree.${previous}`, undefined)
+//     }
+//     await docA.save()
+//   } else {
+//     if (!docA.get(`tree.${previous}`)) {
+//       if (!docA.get(`tree.${edit}.${' '}`)) {
+//         await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+//         await docA.$set(`tree.${previous}`, undefined)
+//         await docA.save()
+//         console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)
+//         return res.json(docA.tree)
+//       }
+//       console.log(`Can't modity word ${previous} to ${edit} from previous of ${target} because ${edit} exist`)
+//       return res.status(304).end()
+//     } else {
+//       if (!docA.get(`tree.${edit}.${' '}`)) {
+//         await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+//       }
+//       const treeAprev = docA.get(`tree.${previous}`)
+//       const treeAedit = docA.get(`tree.${edit}`)
+//       const keyEdit = Object.keys(treeAedit)
+//       if (merge === 'merge') {
+//         Object.keys(treeAprev).forEach(key => {
+//           if (keyEdit.includes(key)) {
+//             treeAedit[key].freq = treeAedit[key].freq > treeAprev[key].freq ? treeAedit[key].freq : treeAprev[key].freq
+//           } else {
+//             treeAedit[key] = treeAprev[key]
+//           }
+//         })
+//       }
+//       await docA.$set(`tree.${previous}`, undefined)
+//       await docA.save()
+//     }
+//   }
+//   console.log(`Modity word ${previous} to ${edit} from previous of ${by} ${target} merge ${merge === 'merge' ? true : false}`)  
+//   res.json(docA.tree)
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -826,6 +826,7 @@ class wordsIO {
     socket.on('word-patch', async (datas) => respond('word-patch', patch, [datas.params, datas.data]))
     socket.on('word-patch-key', async (datas) => respond('word-patch-key', patchKey, [datas.params, datas.data]))
     socket.on('word-add-prev', async (data) => respond('word-add-prev', addPrev, [data]))
+    socket.on('word-mod-prev', async (data) => respond('word-mod-prev', modPrev, [data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -857,6 +858,7 @@ const rest_add      = async (req, res) => add(req.params).then((data) => SUCCESS
 const rest_patch    = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_patchKey = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_addPrev  = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_modPrev = async (req, res) => modPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_remove   = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 
@@ -1018,9 +1020,7 @@ const view = async (data) => {
   return words.findOne(fillter).then((doc) => {
     if (!doc) return E404('word-view-error', `View word ${by} ${target} don't existing`, doc)
     return R200('word-view-success', `View word ${by} ${target} from dictionary successfully`, doc)
-  }).catch((err) => {
-    return E500('word-view-error', err)
-  })
+  }).catch((err) => E500('word-view-error', err))
 }
 
 
@@ -1046,9 +1046,7 @@ const views = async (data) => {
   return words.find().skip(skip).limit(end).then((docs) => {
     if (!docs) return E404('word-views-error', `View words are not found`, docs)
     return R200('word-views-success', `View words skip ${skip} end ${end}`, docs)
-  }).catch((err) => {
-    return E500('word-views-error', err)
-  })
+  }).catch((err) => E500('word-views-error', err))
 }
 
 
@@ -1062,9 +1060,7 @@ const search = async (data) => {
   return words.find({ name: { $regex: name, $options: 'i' } }).then((docs) => {
     if (!docs || docs.length < 1) return E404('word-search-error', `Search words ${name} are miss match`, docs)
     return R200('word-search-success', `Search words match ${name} successfully`, docs)
-  }).catch((err) => {
-    return E500('word-search-error', err)
-  })
+  }).catch((err) => E500('word-search-error', err))
 }
 
 
@@ -1100,13 +1096,9 @@ const remove = async (data) => {
         docDel.next     = raw.next
       }
       docDel.save()
-    }).catch((err) => {
-      return E500('word-remove-error', err)
-    })
+    }).catch((err) => E500('word-remove-error', err))
     return R200('word-remove-success', `Remove word ${target} from dictionary successfully`, raw)
-  }).catch((err) => {
-    return E500('word-remove-error', err)
-  })
+  }).catch((err) => E500('word-remove-error', err))
 }
 
 
@@ -1131,9 +1123,7 @@ const patch = async (params, data) => {
     message += `Old data ${JSON.stringify(doc.value)}${hline}`
     message += `Patch ${JSON.stringify(data)}${hline}`
     return R200('word-patch-success', message, { original: doc.value, patch: data })
-  }).catch((err) => {
-    return E500('word-patch-error', err)
-  })
+  }).catch((err) => E500('word-patch-error', err))
 }
 
 
@@ -1160,9 +1150,7 @@ const patchKey = async (params, data) => {
     message += `Old data ${JSON.stringify(doc.value)}${hline}`
     message += `Patch ${JSON.stringify(data)}${hline}`
     return R200('word-patch-key-success', message, { original: doc.value[key], patch: data })
-  }).catch((err) => {
-    return E500('word-patch-key-error', err)
-  })
+  }).catch((err) => E500('word-patch-key-error', err))
 }
 
 
@@ -1176,18 +1164,66 @@ const addPrev = async (data) => {
   target = remove_spacails(decodeURIComponent(target))
   previous = remove_spacails(decodeURIComponent(previous))
   fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) return E400('word-patch-key-error', `Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode} bad request`)
+  if ('statusCode' in fillter) return E400('word-add-prev-error', `Add word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode} bad request`)
   return words.findOne(fillter).then(async (doc) => {
-    if (!doc) return E304('word-add-prev-error', `Can't word ${previous} as previous of ${by} ${target} because ${target} don't existing`)
+    if (!doc) return E304('word-add-prev-error', `Can't add word ${previous} as previous of ${by} ${target} because ${target} don't existing`)
     if (!doc.get(`tree.${previous}`)) {
       const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' }).save()
       return R200('word-add-prev-success', `Add word ${previous} as previous of ${target} successfully`, result)
     } else {
       return E304('word-add-prev-error', `Can't add ${previous} as previous of ${target} because ${previous} existing`)
     }
-  }).catch((err) => {
-    return E500('word-add-prev-error', err)
-  })
+  }).catch((err) => E500('word-add-prev-error', err))
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                           |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const modPrev = async (data) => {
+  let { by, target, previous, edit, merge } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  edit = remove_spacails(decodeURIComponent(edit))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-mod-prev-error', `Modity word previous of ${by} ${target} from ${previous} to ${edit} status code ${fillter.statusCode}`)
+  return Promise.all([
+    words.findOne(fillter),
+    words.findOne({ name: edit })
+  ]).then(async ([docA, docB]) => {
+    // ยอมให้แก้ไข หากคำที่ต้องการแก้ เป็นคำศัพท์ที่มีอยู่ในพจนานุกรมอยู่ก่อนแล้วเท่านั้น
+    if (!docA) return E304('word-mod-prev-error', `Can't modity word previous of ${by} ${target} from ${previous} to ${edit} because ${target} don't existing`)
+    if (!docB) return E304('word-mod-prev-error', `Can't modity word previous of ${by} ${target} from ${previous} to ${edit} need add word ${edit} before`)
+    if (!docA.get(`tree.${previous}`)) {
+      if (!docA.get(`tree.${edit}`)) {
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+        await docA.save()
+        return R200('word-mod-prev-success', `Modify word previous from ${previous} to ${edit} successfully`, docA)
+      }
+      return E304('word-mod-prev-error', `Can't modity word previous of ${by} ${target} from ${previous} to ${edit}  because ${edit} existing`)
+    } else {
+      if (!docA.get(`tree.${edit}.${' '}`)) {
+        await docA.$set(`tree.${edit}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+      }
+      if (merge === 'merge') {
+        const treeAprev = docA.get(`tree.${previous}`)
+        const treeAedit = docA.get(`tree.${edit}`)
+        const keyEdit   = Object.keys(treeAedit)
+        Object.keys(treeAprev).forEach(key => {
+          if (keyEdit.includes(key)) {
+            treeAedit[key].freq = treeAedit[key].freq > treeAprev[key].freq ? treeAedit[key].freq : treeAprev[key].freq
+          } else {
+            treeAedit[key] = treeAprev[key]
+          }
+        })
+      }
+      await docA.$set(`tree.${previous}`, undefined)
+      await docA.save()
+      return R200('word-mod-prev-success', `Modify word previous from ${previous} to ${edit} successfully`, docA)
+    }
+  }).catch((err) => E500('word-mod-prev-error', err))
 }
 
 

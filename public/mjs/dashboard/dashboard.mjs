@@ -30,7 +30,8 @@ export default class extends abstractPage {
       // socket.emit('word-search', { name: 'ก' })
       // socket.emit('word-patch', {params: { by: 'name', target: 'หนัง' }, data: { lang: "th" }})
       // socket.emit('word-patch-key', { params: { by: 'name', target: 'ก้าง', key: 'ลอง' }, data: { age: "โบราณ" }})
-      // socket.emit('word-add-prev', { by: 'name', target: 'แสดง', previous: 'การ' }) 
+      // socket.emit('word-add-prev', { by: 'name', target: 'แสดง', previous: 'การ' })
+      // socket.emit('word-mod-prev', { by: 'name', target: 'ก้าง', previous: 'มี', edit: 'โดน', merge: 'merge' })
     })
     
     socket.on('hello', (data) => console.log(data))
