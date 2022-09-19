@@ -21,6 +21,8 @@ export default class {
     socket.on('word-remove-prev-error', (data) => console.error(data))
     socket.on('word-add-next-error', (data) => console.error(data))
     socket.on('word-mod-next-error', (data) => console.error(data))
+    socket.on('word-patch-next-error', (data) => console.error(data))
+    socket.on('word-remove-next-error', (data) => console.error(data))
 
     socket.on('word-stat-success', (data) => this.renderStat(data.result))
     socket.on('word-view-success', (data) => console.log(data))
@@ -34,20 +36,20 @@ export default class {
     socket.on('word-remove-prev-success', (data) => console.log(data))
     socket.on('word-add-next-success', (data) => console.log(data))
     socket.on('word-mod-next-success', (data) => console.log(data))
+    socket.on('word-patch-next-success', (data) => console.log(data))
+    socket.on('word-remove-next-success', (data) => console.log(data))
 
     socket.on('word-add-success', (data) => {
-      this.insertLastStat({ id: 'lastAdd', word: this.wrapData(data.result), timestamps: 'create' }, { insert: true, duplicate: true })
-      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true, duplicate: true })
-      // this.insertLastStat({ id: 'lastHigh', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
-      // this.insertLastStat({ id: 'lastLow', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastAdd', word: this.wrapData(data.result), timestamps: 'create' }, { insert: true })
+      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true })
     })
     socket.on('word-mod-success', (data) => {
-      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true, duplicate: true })
-      this.insertLastStat({ id: 'lastHigh', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
-      this.insertLastStat({ id: 'lastLow', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true })
+      this.insertLastStat({ id: 'lastHigh', word: this.wrapData(data.result), timestamps: 'modified' })
+      this.insertLastStat({ id: 'lastLow', word: this.wrapData(data.result), timestamps: 'modified' })
     })
     socket.on('word-remove-success', (data) => {
-      this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true })
+      this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
       this.removeDeleted({ id: 'lastAdd', word: data.result })
       this.removeDeleted({ id: 'lastMod', word: data.result })
       this.removeDeleted({ id: 'lastHigh', word: data.result })
@@ -188,7 +190,7 @@ export default class {
     const box = section.childNodes[1]
     const value = box.childNodes[0]
     const ul = value.childNodes[0]
-    if (duplicate) this.removeDuplicate(ul, word.name)
+    if (!duplicate) this.removeDuplicate(ul, word.name)
     const li = document.createElement('li')
     let tooltip = `คำศัพท์ ${word.name}\n`
     tooltip += `เพิ่มเมื่อ ${thdate(new Date(word['create']), { time: true, full: true, thainum: true })}\n`

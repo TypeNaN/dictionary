@@ -695,43 +695,43 @@ const field_extracts_removed = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ ลบคำถัดไปในคำศัพท์ 1 รายการจาก collection words                               |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ ลบคำถัดไปในคำศัพท์ 1 รายการจาก collection words                               |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_removeNext = async (req, res) => {
-  let { by, target, previous, next } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  next = remove_spacails(decodeURIComponent(next))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Remove word next ${next} in ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).then((doc) => doc).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.error(`Can't remove word next ${next} from ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  if (!doc.get(`tree.${previous}`)) {
-    console.error(`Can't remove word next ${next} from ${target} because previous ${previous} don't exist`)
-    return res.status(304).end()
-  }
-  if (!doc.get(`tree.${previous}.${next}`)) {
-    console.error(`Can't remove word next ${next} from ${target} because next ${next} don't exist`)
-    return res.status(304).end()
-  }
-  const result = await doc.$set(`tree.${previous}.${next}`, undefined)
-  await doc.save()
-  console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
-  res.json({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })
-}
+// const rest_removeNext = async (req, res) => {
+//   let { by, target, previous, next } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   next = remove_spacails(decodeURIComponent(next))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Remove word next ${next} in ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const doc = await words.findOne(fillter).then((doc) => doc).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     console.error(`Can't remove word next ${next} from ${target} because ${target} don't exist`)
+//     return res.status(304).end()
+//   }
+//   if (!doc.get(`tree.${previous}`)) {
+//     console.error(`Can't remove word next ${next} from ${target} because previous ${previous} don't exist`)
+//     return res.status(304).end()
+//   }
+//   if (!doc.get(`tree.${previous}.${next}`)) {
+//     console.error(`Can't remove word next ${next} from ${target} because next ${next} don't exist`)
+//     return res.status(304).end()
+//   }
+//   const result = await doc.$set(`tree.${previous}.${next}`, undefined)
+//   await doc.save()
+//   console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
+//   res.json({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -856,6 +856,7 @@ class wordsIO {
     socket.on('word-add-next',    async (data) => broadcast('word-add-next',    addNext,    [data]))
     socket.on('word-mod-next',    async (data) => broadcast('word-mod-next',    modNext,    [data]))
     socket.on('word-patch-next',  async (data) => broadcast('word-patch-next',  patchNext,  [data.params, data.data]))
+    socket.on('word-remove-next', async (data) => broadcast('word-remove-next', removeNext, [data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -895,6 +896,7 @@ const rest_removePrev = async (req, res) => removePrev(req.params).then((data) =
 const rest_addNext    = async (req, res) => addNext(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_modNext    = async (req, res) => modNext(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_patchNext  = async (req, res) => patchNext(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_removeNext = async (req, res) => removeNext(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err)) 
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -1369,6 +1371,26 @@ const patchNext = async (params, data) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำถัดไปในคำศัพท์ 1 รายการจาก collection words                               |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const removeNext = async (data) => {
+  let { by, target, previous, next } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-remove-next-error', `Remove word next ${next} from ${by} ${target} ${previous} status code ${fillter.statusCode} bad request`)
+  return words.findOne(fillter).then(async (doc) => {
+    if (!doc) return E304('word-remove-next-error', `Can't remove word next ${next} from ${by} ${target} ${previous} because ${target} don't existing`)
+    if (!doc.get(`tree.${previous}`)) return E304('word-remove-next-error', `Can't remove word next ${next} from ${by} ${target} ${previous} because ${previous} don't existing`)
+    if (!doc.get(`tree.${previous}.${next}`)) return E304('word-remove-next-error', `Can't remove word next ${next} from ${by} ${target} ${previous} because ${next} don't existing`)
+    const result = await doc.$set(`tree.${previous}.${next}`, undefined).save()
+    return R200('word-remove-next-success', `Remove word next ${next} from ${by} ${target} ${previous} successfully`, result)
+  }).catch((err) => E500('word-remove-next-error', err))
+}
 
   // const doc = await words.findOne(fillter).catch((err) => err)
   // if (doc && 'message' in doc) return E500('word-remove-error', doc)

@@ -43,6 +43,7 @@ export default class extends abstractPage {
       //   params: { by: 'name', target: 'ทด', previous: 'ลอง', next: "สอบ" },
       //   data: {freq: 3,feel: -1,type: "นาม",mean: "ก้างติดอยู่กับอะไรบางอย่าง",example: ["มีก้างติดคอฉันอยู่"] }
       // })
+      // socket.emit('word-remove-next', { by: 'name', target: 'ทด', previous: 'ลอง', next: "สอบ" })
     })
     
     socket.on('hello', (data) => console.log(data))
