@@ -36,15 +36,15 @@ export default class {
     socket.on('word-mod-next-success', (data) => console.log(data))
 
     socket.on('word-add-success', (data) => {
-      this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
-      this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
-      // this.insertLastStat({ id: 'lastHigh', word: data.result, timestamps: 'modified' }, { duplicate: true })
-      // this.insertLastStat({ id: 'lastLow', word: data.result, timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastAdd', word: this.wrapData(data.result), timestamps: 'create' }, { insert: true, duplicate: true })
+      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true, duplicate: true })
+      // this.insertLastStat({ id: 'lastHigh', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
+      // this.insertLastStat({ id: 'lastLow', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
     })
     socket.on('word-mod-success', (data) => {
-      this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })
-      this.insertLastStat({ id: 'lastHigh', word: data.result, timestamps: 'modified' }, { duplicate: true })
-      this.insertLastStat({ id: 'lastLow', word: data.result, timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastMod', word: this.wrapData(data.result), timestamps: 'modified' }, { insert: true, duplicate: true })
+      this.insertLastStat({ id: 'lastHigh', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
+      this.insertLastStat({ id: 'lastLow', word: this.wrapData(data.result), timestamps: 'modified' }, { duplicate: true })
     })
     socket.on('word-remove-success', (data) => {
       this.insertLastStat({ id: 'lastDel', word: data.result, timestamps: 'modified' }, { insert: true })
@@ -58,7 +58,7 @@ export default class {
   fetch = async () => {
     fetch('/statistics', { method: 'GET' }).then((res) => {
       if (res.status == 200) return res.json().then((data) => this.renderStat(data))
-      res.text().then((message)=>console.log(message))
+      res.text().then((message) => console.error(message))
     }).catch((err) => console.error(err))
   }
 
@@ -134,7 +134,7 @@ export default class {
     const fbox = fsection.childNodes[1]
     const fvalue = fbox.childNodes[0]
     const first = fvalue.childNodes[0]
-    let html = `<div><div>คำศัพท์</div> ${data.first.name}</div>`
+    let html = `<div><div>คำศัพท์</div> ${data.first.name == ' ' ? '&nbsp;' : data.first.name}</div>`
     html += `<div><div>เพิ่มเมื่อ</div> ${thdate(new Date(data.first.create), { time: true })}</div>`
     html += `<div><div>แก้ไขเมื่อ</div> ${thdate(new Date(data.first.modified), { time: true })}</div>`
     html += `<div><div>เชื่อมโยงมา</div> ${data.first.previous.length} คำศัพท์</div>`
@@ -155,10 +155,19 @@ export default class {
     })
   }
 
+  wrapData = (data) => ({
+    create  : data.create,
+    modified: data.modified,
+    counter : data.counter,
+    name    : data.name,
+    previous: Object.keys(data.tree),
+    next    : Object.keys(data.tree[' '])
+  })
+
   extract = (parent, buf, timestamps = 'create') => {
     buf.forEach((word) => {
       const li = document.createElement('li')
-      let tooltip = `คำศัพท์ ${word.name}\n`
+      let tooltip = `คำศัพท์ ${word.name == ' ' ? '&nbsp' : word.name}\n`
       tooltip += `เพิ่มเมื่อ ${thdate(new Date(word['create']), { time: true, full: true, thainum: true })}\n`
       tooltip += `แก้ไขเมื่อ ${thdate(new Date(word['modified']), { time: true, full: true, thainum: true })}\n`
       tooltip += `เชื่อมโยงมา ${thnum(word.previous.length)} คำศัพท์\n`

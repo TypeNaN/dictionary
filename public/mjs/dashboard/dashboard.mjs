@@ -39,6 +39,10 @@ export default class extends abstractPage {
       // socket.emit('word-remove-prev', { by:'name', target: 'ก้าง',previous:'มี' })
       // socket.emit('word-add-next', { by: 'name', target: 'ก้าง', previous: 'มี',next:'ตัว' })
       // socket.emit('word-mod-next', { by: 'name', target: 'ก้าง', previous: 'มี', next: 'ติด', edit: 'หัก' })
+      // socket.emit('word-patch-next', {
+      //   params: { by: 'name', target: 'ทด', previous: 'ลอง', next: "สอบ" },
+      //   data: {freq: 3,feel: -1,type: "นาม",mean: "ก้างติดอยู่กับอะไรบางอย่าง",example: ["มีก้างติดคอฉันอยู่"] }
+      // })
     })
     
     socket.on('hello', (data) => console.log(data))

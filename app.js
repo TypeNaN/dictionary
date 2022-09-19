@@ -182,6 +182,7 @@ app.get('/', checkCore, (req, res) => {
 })
 
 app.get('/statistics', checkCore, words.rest_stat)
+app.get('/views', checkCore, words.rest_views) 
 app.get('/views/:skip/:end', checkCore, words.rest_views)
 app.get('/views/:skip/:end/:key/:by', checkCore, words.rest_views)
 app.get('/view/:by/:target', checkCore, words.rest_view)

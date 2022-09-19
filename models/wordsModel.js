@@ -1,8 +1,8 @@
 const mongoose = require('mongoose')
 
 const collection = 'words'
-const collection_stat = 'statistics'
-const collection_delete = 'words_deleted'
+// const collection_stat = 'statistics'
+const collection_removed = 'words_removed'
 
 const wordsSchema = new mongoose.Schema({
   create    : { type: Number, default: 0 },                   // เวลาที่ถูกสร้าง
@@ -38,84 +38,96 @@ const wordsSchema = new mongoose.Schema({
     currentTime: () => Math.floor(new Date().getTime())
   },
   versionKey: false,
-  strict: true,
-  collection
+  strict: true
 })
 
-const wordsStat = new mongoose.Schema({
+// const wordsStat = new mongoose.Schema({
+//   create  : { type: Number, default: 0 },
+//   modified: { type: Number, default: 0 },
+//   counter : { type: Number, default: 0 },
+//   name    : { type: String, required: true, unique: true},
+//   previous: { type: [String], default: [] },
+//   next    : { type: [String], default: [] }
+// })
+
+// const statSchema = new mongoose.Schema({
+//   total   : { type: Number, default: 0 },
+//   first   : { type: wordsStat },
+//   lastAdd : { type: [wordsStat] },
+//   lastMod : { type: [wordsStat] },
+//   lastDel : { type: [wordsStat] },
+//   lastHigh: { type: [wordsStat] },
+//   lastLow : { type: [wordsStat] },
+// },
+// {
+//   versionKey: false,
+//   strict: true,
+//   collection_stat
+// })
+
+const wordsRemovedSchema = new mongoose.Schema({
   create  : { type: Number, default: 0 },
   modified: { type: Number, default: 0 },
   counter : { type: Number, default: 0 },
   name    : { type: String, required: true, unique: true},
   previous: { type: [String], default: [] },
   next    : { type: [String], default: [] }
-})
-
-const statSchema = new mongoose.Schema({
-  total   : { type: Number, default: 0 },
-  first   : { type: wordsStat },
-  lastAdd : { type: [wordsStat] },
-  lastMod : { type: [wordsStat] },
-  lastDel : { type: [wordsStat] },
-  lastHigh: { type: [wordsStat] },
-  lastLow : { type: [wordsStat] },
 },
 {
   versionKey: false,
-  strict: true,
-  collection_stat
-})
-
-const wordsDelStat = new mongoose.Schema({
-  create  : { type: Number, default: 0 },
-  modified: { type: Number, default: 0 },
-  counter : { type: Number, default: 0 },
-  name    : { type: String, required: true, unique: true},
-  previous: { type: [String], default: [] },
-  next    : { type: [String], default: [] }
-},
-{
-  versionKey: false,
-  strict: true,
-  collection_delete
+  strict: true
 })
 
 const words = mongoose.model(collection, wordsSchema)
-const statistics = mongoose.model(collection_stat, statSchema)
-const wordsDeleted = mongoose.model(collection_delete, wordsDelStat)
+// const statistics = mongoose.model(collection_stat, statSchema)
+const wordsRemoved = mongoose.model(collection_removed, wordsRemovedSchema)
 
 const remove_spacails = (data) => data.replace(/[~!@#$%^&*\(\)+=\[\]\{\};:\`\'\"\\|,.<>/?]/g, '')
 const isId = (id) => mongoose.isObjectIdOrHexString(id) ? { _id: id } : { statusCode: 400 }
 const hline = '\n────────────────────────────────────────────────────────────────────────────────\n'
 
-const field_extract = (data) => ({
+const field_extract = (data) => (data ? {
   create  : data.create,
   modified: data.modified,
   counter : data.counter,
   name    : data.name,
   previous: Object.keys(data.tree),
   next    : Object.keys(data.tree[' '])
+} : {
+  create  : 0,
+  modified: 0,
+  counter : 0,
+  name    : ' ',
+  previous: [],
+  next    : []
 })
 
-const field_extracts = (data) => Array.from(data.map((chunk) => ({
+const field_extracts = (data) => (data ? Array.from(data.map((chunk) => ({
   create  : chunk.get('create'),
   modified: chunk.get('modified'),
   counter : chunk.get('counter'),
   name    : chunk.get('name'),
   previous: Object.keys(chunk.get(`tree`)),
   next    : Object.keys(chunk.get(`tree.${' '}`))
-})))
+}))) : [{
+  create  : 0,
+  modified: 0,
+  counter : 0,
+  name    : ' ',
+  previous: [],
+  next    : []
+}])
 
-const field_stat_extract = (data) => ({
-  create  : data.create,
-  modified: data.modified,
-  counter : data.counter,
-  name    : data.name,
-  previous: data.previous,
-  next    : data.next
-})
+// const field_extract_removed = (data) => ({
+//   create  : data.create,
+//   modified: data.modified,
+//   counter : data.counter,
+//   name    : data.name,
+//   previous: data.previous,
+//   next    : data.next
+// })
 
-const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
+const field_extracts_removed = (data) => Array.from(data.map((chunk) => ({
   create  : chunk.create,
   modified: chunk.modified,
   counter : chunk.counter,
@@ -647,40 +659,40 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_patchNext = async (req, res) => {
-  const data = req.body
-  let { by, target, previous, next } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  next = remove_spacails(decodeURIComponent(next))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Patch word next ${next} of ${previous} in ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.error(`Can't patch word next ${next} to ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  if (!doc.get(`tree.${previous}`)) {
-    const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
-    console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
-  }
-  const result = await doc.$set(`tree.${previous}.${next}`, data)
-  console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
-  const newDoc = await doc.save()
-  res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
-}
+// const rest_patchNext = async (req, res) => {
+//   const data = req.body
+//   let { by, target, previous, next } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   next = remove_spacails(decodeURIComponent(next))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Patch word next ${next} of ${previous} in ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const doc = await words.findOne(fillter).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     console.error(`Can't patch word next ${next} to ${target} because ${target} don't exist`)
+//     return res.status(304).end()
+//   }
+//   if (!doc.get(`tree.${previous}`)) {
+//     const result = await doc.$set(`tree.${previous}.${' '}`, { freq: 0, feel: 0, type: '', posi: '', mean: '' })
+//     console.log(`Add ${previous} as previous of ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+//   }
+//   const result = await doc.$set(`tree.${previous}.${next}`, data)
+//   console.log(`Patch word next ${next} of ${previous} in ${by} ${target} successfully ${JSON.stringify({ [previous]: { [next]: result.get(`tree.${previous}.${next}`) } })}`)
+//   const newDoc = await doc.save()
+//   res.json({ [previous]: { [next]: newDoc.tree[previous][next] } })
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -782,12 +794,12 @@ const rest_removeNext = async (req, res) => {
 //   }
 //   const data = {
 //     total   : doc.get('total'),
-//     first   : field_stat_extract(doc.get('first')),
-//     lastAdd : field_stat_extracts(doc.get('lastAdd')),
-//     lastMod : field_stat_extracts(doc.get('lastMod')),
-//     lastDel : field_stat_extracts(doc.get('lastDel')),
-//     lastHigh: field_stat_extracts(doc.get('lastHigh')),
-//     lastLow : field_stat_extracts(doc.get('lastLow'))
+//     first   : field_extract_removed(doc.get('first')),
+//     lastAdd : field_extracts_removed(doc.get('lastAdd')),
+//     lastMod : field_extracts_removed(doc.get('lastMod')),
+//     lastDel : field_extracts_removed(doc.get('lastDel')),
+//     lastHigh: field_extracts_removed(doc.get('lastHigh')),
+//     lastLow : field_extracts_removed(doc.get('lastLow'))
 //   }
 //   res.status(200).json(data)
 // }
@@ -803,11 +815,23 @@ const rest_removeNext = async (req, res) => {
 
 class wordsIO {
   constructor(socket) {
-    const respond = async (label, process, datas) => {
-      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(datas)}`)
-      process(...datas).then((chunk) => {
+    const respond = async (label, process, data) => {
+      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
+      process(...data).then((chunk) => {
         const { event, code, message, result } = chunk
         socket.emit(event, { code: code, message: message, result: result })
+      }).catch((err) => {
+        console.error(err)
+        socket.emit(`${label}-error`, { code: 500, message: err.message, result: null })
+      })
+    }
+
+    const broadcast = async (label, process, data) => {
+      console.log(`[SOCKET] ${socket.id} | ${label} | ${JSON.stringify(data)}`)
+      process(...data).then((chunk) => {
+        const { event, code, message, result } = chunk
+        socket.emit(event, { code: code, message: message, result: result })
+        socket.broadcast.emit(event, { code: code, message: message, result: result })
       }).catch((err) => {
         console.error(err)
         socket.emit(`${label}-error`, { code: 500, message: err.message, result: null })
@@ -817,20 +841,21 @@ class wordsIO {
     console.log(`Socket connection: ${socket.id}`)
     socket.broadcast.emit('hello', `Hi, I am ${socket.id}`)
 
-    socket.on('word-stat', async (data) => respond('word-stat', stat, [data]))
-    socket.on('word-view', async (data) => respond('word-view', view, [data]))
-    socket.on('word-views', async (data) => respond('word-views', views, [data]))
-    socket.on('word-search', async (data) => respond('word-search', search, [data]))
-    socket.on('word-add', async (data) => respond('word-add', add, [data]))
-    socket.on('word-remove', async (data) => respond('word-remove', remove, [data]))
-    socket.on('word-patch', async (datas) => respond('word-patch', patch, [datas.params, datas.data]))
-    socket.on('word-patch-key', async (datas) => respond('word-patch-key', patchKey, [datas.params, datas.data]))
-    socket.on('word-add-prev', async (data) => respond('word-add-prev', addPrev, [data]))
-    socket.on('word-mod-prev', async (data) => respond('word-mod-prev', modPrev, [data]))
-    socket.on('word-patch-prev', async (datas) => respond('word-patch-prev', patchPrev, [datas.params, datas.data]))
-    socket.on('word-remove-prev', async (data) => respond('word-remove-prev', removePrev, [data]))
-    socket.on('word-add-next', async (data) => respond('word-add-next', addNext, [data]))
-    socket.on('word-mod-next', async (data) => respond('word-mod-next', modNext, [data]))
+    socket.on('word-stat',        async (data) => respond('word-stat',          stat,       [data]))
+    socket.on('word-view',        async (data) => respond('word-view',          view,       [data]))
+    socket.on('word-views',       async (data) => respond('word-views',         views,      [data]))
+    socket.on('word-search',      async (data) => respond('word-search',        search,     [data]))
+    socket.on('word-add',         async (data) => broadcast('word-add',         add,        [data]))
+    socket.on('word-remove',      async (data) => broadcast('word-remove',      remove,     [data]))
+    socket.on('word-patch',       async (data) => broadcast('word-patch',       patch,      [data.params, data.data]))
+    socket.on('word-patch-key',   async (data) => broadcast('word-patch-key',   patchKey,   [data.params, data.data]))
+    socket.on('word-add-prev',    async (data) => broadcast('word-add-prev',    addPrev,    [data]))
+    socket.on('word-mod-prev',    async (data) => broadcast('word-mod-prev',    modPrev,    [data]))
+    socket.on('word-patch-prev',  async (data) => broadcast('word-patch-prev',  patchPrev,  [data.params, data.data]))
+    socket.on('word-remove-prev', async (data) => broadcast('word-remove-prev', removePrev, [data]))
+    socket.on('word-add-next',    async (data) => broadcast('word-add-next',    addNext,    [data]))
+    socket.on('word-mod-next',    async (data) => broadcast('word-mod-next',    modNext,    [data]))
+    socket.on('word-patch-next',  async (data) => broadcast('word-patch-next',  patchNext,  [data.params, data.data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -869,6 +894,8 @@ const rest_removePrev = async (req, res) => removePrev(req.params).then((data) =
 
 const rest_addNext    = async (req, res) => addNext(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const rest_modNext    = async (req, res) => modNext(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchNext  = async (req, res) => patchNext(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ Template การตอบกลับ                                                         |
@@ -914,14 +941,14 @@ const E500 = (event, err) => {
 //   if (lastHigh && 'message' in lastHigh) console.error(lastHigh)
 //   const lastLow = await words.find().sort({ counter: 'asc' }).limit(100).catch((err) => err)
 //   if (lastLow && 'message' in lastLow) console.error(lastLow)
-//   const lastDel = await wordsDeleted.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
+//   const lastDel = await wordsRemoved.find().sort({ modified: 'desc' }).limit(100).catch((err) => err)
 //   if (lastDel && 'message' in lastDel) console.error(lastDel)
 //   const data = {
 //     total    : total,
 //     first    : field_extract(first),
 //     lastAdd  : field_extracts(lastAdd),
 //     lastMod  : field_extracts(lastMod),
-//     lastDel  : field_stat_extracts(lastDel),
+//     lastDel  : field_extracts_removed(lastDel),
 //     lastHigh : field_extracts(lastHigh),
 //     lastLow  : field_extracts(lastLow)
 //   }
@@ -949,14 +976,14 @@ const E500 = (event, err) => {
 //             lastHigh = doc
 //             return words.find().sort({ counter: 'asc' }).limit(100).then((doc) => {
 //               lastLow = doc
-//               return wordsDeleted.find().sort({ modified: 'desc' }).limit(100).then((doc) => {
+//               return wordsRemoved.find().sort({ modified: 'desc' }).limit(100).then((doc) => {
 //                 lastDel = doc
 //                 const data = {
 //                   total    : total,
 //                   first    : field_extract(first),
 //                   lastAdd  : field_extracts(lastAdd),
 //                   lastMod  : field_extracts(lastMod),
-//                   lastDel  : field_stat_extracts(lastDel),
+//                   lastDel  : field_extracts_removed(lastDel),
 //                   lastHigh : field_extracts(lastHigh),
 //                   lastLow  : field_extracts(lastLow)
 //                 }
@@ -980,7 +1007,7 @@ const stat = async () => {
     words.find().sort({ modified: 'desc' }).limit(100),
     words.find().sort({ counter: 'desc' }).limit(100),
     words.find().sort({ counter: 'asc' }).limit(100),
-    wordsDeleted.find().sort({ modified: 'desc' }).limit(100)
+    wordsRemoved.find().sort({ modified: 'desc' }).limit(100)
   ]).then(([total, first, lastAdd, lastMod, lastHigh, lastLow, lastDel]) => {
     const data = {
       total   : total,
@@ -989,7 +1016,7 @@ const stat = async () => {
       lastMod : field_extracts(lastMod),
       lastHigh: field_extracts(lastHigh),
       lastLow : field_extracts(lastLow),
-      lastDel : field_stat_extracts(lastDel)
+      lastDel : field_extracts_removed(lastDel)
     }
     return R200('word-stat-success', 'Get words statistics success', data)
   }).catch((err) => E500('word-stat-error', err))
@@ -1084,17 +1111,17 @@ const remove = async (data) => {
   return words.findOne(fillter).then((doc) => {
     if (!doc) return E304('word-remove-error', `Can't remove word ${target} because ${target} don't existing`)
     const raw = {
-      create: doc.create,
+      create  : doc.create,
       modified: Math.floor(new Date().getTime()),
-      counter: doc.counter,
-      name: doc.name,
+      counter : doc.counter,
+      name    : doc.name,
       previous: Object.keys(doc.tree),
-      next: Object.keys(doc.tree[' '])
+      next    : Object.keys(doc.tree[' '])
     }
     doc.remove()
-    wordsDeleted.findOne(fillter).then((docDel) => {
+    wordsRemoved.findOne(fillter).then((docDel) => {
       if (!docDel) {
-        docDel = new wordsDeleted(raw)
+        docDel = new wordsRemoved(raw)
       } else {
         docDel.create   = raw.create
         docDel.modified = raw.modified
@@ -1318,6 +1345,29 @@ const modNext = async (data) => {
     return R200('word-add-next-success', `Modity word next of ${by} ${target} ${previous} from ${next} to ${edit} successfully`, result)
   }).catch((err) => E500('word-mod-next-error', err))
 }
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const patchNext = async (params, data) => {
+  let { by, target, previous, next } = params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  next = remove_spacails(decodeURIComponent(next))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-patch-next-error', `Patch word next ${next} to ${by} ${target} ${previous} status code ${fillter.statusCode} bad request`)
+  return words.findOne(fillter).then(async (doc) => {
+    if (!doc) return E304('word-patch-next-error', `Can't patch word next ${next} to ${by} ${target} ${previous} because ${target} don't existing`)
+    if (!doc.get(`tree.${previous}`)) return E304('word-patch-next-error', `Can't patch word next ${next} to ${by} ${target} ${previous} because ${previous} don't existing`)
+    if (!doc.get(`tree.${previous}.${next}`)) return E304('word-patch-next-error', `Can't patch word next ${next} to ${by} ${target} ${previous} because ${next} don't existing`)
+    const result = await doc.$set(`tree.${previous}.${next}`, data).save()
+    return R200('word-patch-next-success', `Patch word next ${next} to ${by} ${target} ${previous} successfully`, result)
+  }).catch((err) => E500('word-patch-next-error', err))
+}
+
 
 
   // const doc = await words.findOne(fillter).catch((err) => err)
