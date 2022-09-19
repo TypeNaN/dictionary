@@ -17,7 +17,8 @@ export default class {
     socket.on('word-patch-key-error', (data) => console.error(data))
     socket.on('word-add-prev-error', (data) => console.error(data))
     socket.on('word-mod-prev-error', (data) => console.error(data))
-    
+    socket.on('word-patch-prev-error', (data) => console.error(data))
+
     socket.on('word-stat-success', (data) => this.renderStat(data.result))
     socket.on('word-view-success', (data) => console.log(data))
     socket.on('word-views-success', (data) => console.log(data))
@@ -26,7 +27,8 @@ export default class {
     socket.on('word-patch-key-success', (data) => console.log(data))
     socket.on('word-add-prev-success', (data) => console.log(data))
     socket.on('word-mod-prev-success', (data) => console.log(data))
-    
+    socket.on('word-patch-prev-success', (data) => console.log(data))
+
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })
       this.insertLastStat({ id: 'lastMod', word: data.result, timestamps: 'modified' }, { insert: true, duplicate: true })

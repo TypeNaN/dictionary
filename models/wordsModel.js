@@ -482,35 +482,35 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ แก้ไขข้อมูลทั้งหมดของคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words               |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ แก้ไขข้อมูลทั้งหมดของคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words               |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_patchPrev = async (req, res) => {
-  const data = req.body
-  let { by, target, previous } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Patch word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.error(`Can't Patch word previous ${previous} of ${by} ${target} from ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  const result = await doc.$set(`tree.${previous}`, data)
-  await doc.save()
-  console.log(`Patch word previous ${previous} of ${by} ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
-  res.json(result.get(`tree.${previous}`))
-}
+// const rest_patchPrev = async (req, res) => {
+//   const data = req.body
+//   let { by, target, previous } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Patch word ${previous} as previous of ${by} ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const doc = await words.findOne(fillter).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     console.error(`Can't Patch word previous ${previous} of ${by} ${target} from ${target} because ${target} don't exist`)
+//     return res.status(304).end()
+//   }
+//   const result = await doc.$set(`tree.${previous}`, data)
+//   await doc.save()
+//   console.log(`Patch word previous ${previous} of ${by} ${target} successfully ${JSON.stringify(result.get(`tree.${previous}`))}`)
+//   res.json(result.get(`tree.${previous}`))
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -827,6 +827,7 @@ class wordsIO {
     socket.on('word-patch-key', async (datas) => respond('word-patch-key', patchKey, [datas.params, datas.data]))
     socket.on('word-add-prev', async (data) => respond('word-add-prev', addPrev, [data]))
     socket.on('word-mod-prev', async (data) => respond('word-mod-prev', modPrev, [data]))
+    socket.on('word-patch-prev', async (datas) => respond('word-patch-prev', patchPrev, [datas.params, datas.data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -854,12 +855,13 @@ const rest_views  = async (req, res) => {
   views({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
 
-const rest_add      = async (req, res) => add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_patch    = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_patchKey = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_addPrev  = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_modPrev = async (req, res) => modPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_remove   = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_add       = async (req, res) => add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patch     = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchKey  = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchPrev = async (req, res) => patchPrev(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_addPrev   = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_modPrev   = async (req, res) => modPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_remove    = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -1224,6 +1226,26 @@ const modPrev = async (data) => {
       return R200('word-mod-prev-success', `Modify word previous from ${previous} to ${edit} successfully`, docA)
     }
   }).catch((err) => E500('word-mod-prev-error', err))
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ แก้ไขข้อมูลทั้งหมดของคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words               |
+// └────────────────────────────────────────────────────────────────────────────┘
+// ไม่มีการตรวจสอบ data แบบนี้เป็นอันตรายอย่างมาก ต้องการ function verify data ด่วนๆ
+
+const patchPrev = async (params, data) => {
+  let { by, target, previous } = params
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-patch-prev-error', `Patch word previous ${previous} of ${by} ${target}  status code ${fillter.statusCode} bad request`)
+  return words.findOne(fillter).then(async (doc) => {
+    if (!doc) return E304('word-patch-prev-error', `Can't patch word previous ${previous} of ${by} ${target} because ${target} don't existing`)
+    const result = await doc.$set(`tree.${previous}`, data).save()
+    return R200('word-patch-prev-success', `Patch word previous ${previous} of ${by} ${target} successfully`, result)
+  }).catch((err) => E500('word-patch-prev-error', err))
 }
 
 
