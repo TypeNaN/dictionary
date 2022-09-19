@@ -513,38 +513,38 @@ const field_stat_extracts = (data) => Array.from(data.map((chunk) => ({
 // }
 
 
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
-// └────────────────────────────────────────────────────────────────────────────┘
+// // ┌────────────────────────────────────────────────────────────────────────────┐
+// // │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
+// // └────────────────────────────────────────────────────────────────────────────┘
 
-const rest_removePrev = async (req, res) => {
-  let { by, target, previous } = req.params
-  by = remove_spacails(decodeURIComponent(by))
-  target = remove_spacails(decodeURIComponent(target))
-  previous = remove_spacails(decodeURIComponent(previous))
-  fillter = (by == 'id' ? isId(target) : { name: target })
-  if ('statusCode' in fillter) {
-    console.error(`Remove word previous ${previous} from ${target} status code ${fillter.statusCode}`)
-    return res.status(fillter.statusCode).end()
-  }
-  const doc = await words.findOne(fillter).catch((err) => err)
-  if (doc && 'message' in doc) {
-    console.error(doc)
-    return res.status(500).send(doc.message)
-  }
-  if (!doc) {
-    console.error(`Can't remove word previous ${previous} from ${target} because ${target} don't exist`)
-    return res.status(304).end()
-  }
-  if (doc.get(`tree.${previous}`)) {
-    await doc.$set(`tree.${previous}`, undefined)
-    console.log(`Remove word previous ${previous} from ${target} successfully`)
-    const newDoc = await doc.save()
-    return res.json(newDoc)
-  }
-  console.error(`Can't remove word previous ${previous} from ${target} because ${previous} don't exist`)
-  return res.status(304).end()
-}
+// const rest_removePrev = async (req, res) => {
+//   let { by, target, previous } = req.params
+//   by = remove_spacails(decodeURIComponent(by))
+//   target = remove_spacails(decodeURIComponent(target))
+//   previous = remove_spacails(decodeURIComponent(previous))
+//   fillter = (by == 'id' ? isId(target) : { name: target })
+//   if ('statusCode' in fillter) {
+//     console.error(`Remove word previous ${previous} from ${target} status code ${fillter.statusCode}`)
+//     return res.status(fillter.statusCode).end()
+//   }
+//   const doc = await words.findOne(fillter).catch((err) => err)
+//   if (doc && 'message' in doc) {
+//     console.error(doc)
+//     return res.status(500).send(doc.message)
+//   }
+//   if (!doc) {
+//     console.error(`Can't remove word previous ${previous} from ${target} because ${target} don't exist`)
+//     return res.status(304).end()
+//   }
+//   if (doc.get(`tree.${previous}`)) {
+//     await doc.$set(`tree.${previous}`, undefined)
+//     console.log(`Remove word previous ${previous} from ${target} successfully`)
+//     const newDoc = await doc.save()
+//     return res.json(newDoc)
+//   }
+//   console.error(`Can't remove word previous ${previous} from ${target} because ${previous} don't exist`)
+//   return res.status(304).end()
+// }
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -828,6 +828,7 @@ class wordsIO {
     socket.on('word-add-prev', async (data) => respond('word-add-prev', addPrev, [data]))
     socket.on('word-mod-prev', async (data) => respond('word-mod-prev', modPrev, [data]))
     socket.on('word-patch-prev', async (datas) => respond('word-patch-prev', patchPrev, [datas.params, datas.data]))
+    socket.on('word-remove-prev', async (data) => respond('word-remove-prev', removePrev, [data]))
     socket.on('close', () => console.log('socket', socket.id, 'closed'))
   }
 }
@@ -854,15 +855,14 @@ const rest_views  = async (req, res) => {
   const sort = (key && by) ? { key: key, by: by } : false
   views({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
-
-const rest_add       = async (req, res) => add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_patch     = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_patchKey  = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_patchPrev = async (req, res) => patchPrev(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_addPrev   = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_modPrev   = async (req, res) => modPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-const rest_remove    = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
-
+const rest_add        = async (req, res) => add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patch      = async (req, res) => patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchKey   = async (req, res) => patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_remove     = async (req, res) => remove(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_addPrev    = async (req, res) => addPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_modPrev    = async (req, res) => modPrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_patchPrev  = async (req, res) => patchPrev(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const rest_removePrev = async (req, res) => removePrev(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ Template การตอบกลับ                                                         |
@@ -991,25 +991,6 @@ const stat = async () => {
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เพิ่มคำศัพท์ลงใน collection words                                              |
-// └────────────────────────────────────────────────────────────────────────────┘
-
-const add = async (data) => {
-  let { name } = data
-  name = remove_spacails(decodeURIComponent(name))
-  return words.create({ name: name }).then((doc) => {
-    const raw = field_extract(doc)
-    return R200('word-add-success', `Add word ${name} into the dictionary successfully`, raw)
-  }).catch((err) => {
-    if (err.message.startsWith('E11000 duplicate key error collection')) {
-      return E304('word-add-error', `Can't add word ${name} into the dictionary ${name} are existing`)
-    }
-    return E500('word-add-error', err)
-  })
-}
-
-
-// ┌────────────────────────────────────────────────────────────────────────────┐
 // │ เรียกดูคำศัพท์ 1 รายการจาก collection words                                     |
 // └────────────────────────────────────────────────────────────────────────────┘
 
@@ -1034,12 +1015,12 @@ const views = async (data) => {
   let { skip, end, sort } = data
   let { key, by } = sort
   if (typeof skip !== Number || skip < 0) skip = 0
-  if (typeof end !== Number || end < skip) end = skip + 100 
+  if (typeof end !== Number || end < skip) end = skip + 100
   if (sort) {
     if (!key) key = 'create'
     if (!by) by = 'asc'
     return words.find().sort({ [key]: by }).skip(skip).limit(end).then((docs) => {
-      if (!docs) return E404('word-views-error', `View words are not found`, docs) 
+      if (!docs) return E404('word-views-error', `View words are not found`, docs)
       return R200('word-views-success', `View words skip ${skip} end ${end} sort ${sort.key} by ${sort.by}`, docs)
     }).catch((err) => {
       return E500('word-views-error', err)
@@ -1063,6 +1044,25 @@ const search = async (data) => {
     if (!docs || docs.length < 1) return E404('word-search-error', `Search words ${name} are miss match`, docs)
     return R200('word-search-success', `Search words match ${name} successfully`, docs)
   }).catch((err) => E500('word-search-error', err))
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำศัพท์ลงใน collection words                                              |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const add = async (data) => {
+  let { name } = data
+  name = remove_spacails(decodeURIComponent(name))
+  return words.create({ name: name }).then((doc) => {
+    const raw = field_extract(doc)
+    return R200('word-add-success', `Add word ${name} into the dictionary successfully`, raw)
+  }).catch((err) => {
+    if (err.message.startsWith('E11000 duplicate key error collection')) {
+      return E304('word-add-error', `Can't add word ${name} into the dictionary ${name} are existing`)
+    }
+    return E500('word-add-error', err)
+  })
 }
 
 
@@ -1246,6 +1246,26 @@ const patchPrev = async (params, data) => {
     const result = await doc.$set(`tree.${previous}`, data).save()
     return R200('word-patch-prev-success', `Patch word previous ${previous} of ${by} ${target} successfully`, result)
   }).catch((err) => E500('word-patch-prev-error', err))
+}
+
+
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำก่อนหน้าในคำศัพท์ 1 รายการจาก collection words                             |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const removePrev = async (data) => {
+  let { by, target, previous } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  previous = remove_spacails(decodeURIComponent(previous))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-remove-prev-error', `Remove word previous ${previous} from ${by} ${target}  status code ${fillter.statusCode} bad request`)
+  return  words.findOne(fillter).then(async (doc) => {
+    if (!doc) return E304('word-remove-prev-error', `Can't remove word previous ${previous} of ${by} ${target} because ${target} don't existing`)
+    if (!doc.get(`tree.${previous}`)) return E304('word-remove-prev-error', `Can't remove word previous ${previous} of ${by} ${target} because ${previous} don't existing`)
+    const result = await doc.$set(`tree.${previous}`, undefined).save()
+    return R200('word-remove-prev-success', `Remove word previous ${previous} of ${by} ${target} successfully`, result)
+  }).catch((err) => E500('word-remove-prev-error', err))
 }
 
 
