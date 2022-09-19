@@ -20,6 +20,7 @@ export default class {
     socket.on('word-patch-prev-error', (data) => console.error(data))
     socket.on('word-remove-prev-error', (data) => console.error(data))
     socket.on('word-add-next-error', (data) => console.error(data))
+    socket.on('word-mod-next-error', (data) => console.error(data))
 
     socket.on('word-stat-success', (data) => this.renderStat(data.result))
     socket.on('word-view-success', (data) => console.log(data))
@@ -32,6 +33,7 @@ export default class {
     socket.on('word-patch-prev-success', (data) => console.log(data))
     socket.on('word-remove-prev-success', (data) => console.log(data))
     socket.on('word-add-next-success', (data) => console.log(data))
+    socket.on('word-mod-next-success', (data) => console.log(data))
 
     socket.on('word-add-success', (data) => {
       this.insertLastStat({ id: 'lastAdd', word: data.result, timestamps: 'create' }, { insert: true, duplicate: true })

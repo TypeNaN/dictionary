@@ -38,6 +38,7 @@ export default class extends abstractPage {
       // })
       // socket.emit('word-remove-prev', { by:'name', target: 'ก้าง',previous:'มี' })
       // socket.emit('word-add-next', { by: 'name', target: 'ก้าง', previous: 'มี',next:'ตัว' })
+      // socket.emit('word-mod-next', { by: 'name', target: 'ก้าง', previous: 'มี', next: 'ติด', edit: 'หัก' })
     })
     
     socket.on('hello', (data) => console.log(data))
