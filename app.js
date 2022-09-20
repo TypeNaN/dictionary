@@ -75,8 +75,8 @@ for (const name of Object.keys(nets)) {
 }
 
 const mongoose  = require('mongoose')
-const words     = require('./models/wordsModel.js')
-const logFile   = fs.createWriteStream('app.log', { flags: 'a' })
+const words     = require('./plugs/words/api')
+const appLog    = fs.createWriteStream('app.log', { flags: 'a' })
 
 new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
   const originalMethod = console[methodName]
@@ -114,16 +114,16 @@ new Array('log', 'info', 'warn', 'error').forEach((methodName) => {
     }
     const t = sdtt(new Date())
     if (methodName == 'error') {
-      logFile.write(`${t} [ERROR] ${initiator_file} ✘ ${args}\n`)
+      appLog.write(`${t} [ERROR] ${initiator_file} ✘ ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgRed}✘ ${args}${COLOR.Reset}`])
     } else if (methodName == 'warn') {
-      logFile.write(`${t} [WARN]  ${initiator_file} ${args}\n`)
+      appLog.write(`${t} [WARN]  ${initiator_file} ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgYellow}${args}${COLOR.Reset}`])
     } else if (methodName == 'info') {
-      logFile.write(`${t} [INFO]  ${initiator_file} ${args}\n`)
+      appLog.write(`${t} [INFO]  ${initiator_file} ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgCyan}${args}${COLOR.Reset}`])
     } else {
-      logFile.write(`${t} [LOG]   ${initiator_file} ${args}\n`)
+      appLog.write(`${t} [LOG]   ${initiator_file} ${args}\n`)
       originalMethod.apply(console, [`${initiator} => ${COLOR.FgGreen}${args}${COLOR.Reset}`])
     }
   }
@@ -211,7 +211,7 @@ app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.rest_rem
 // └────────────────────────────────────────────────────────────────────────────┘
 
 io.on('connection', (socket) => {
-  new words.wordsIO(socket)
+  new words.io(socket)
   // สร้าง socket client สำหรับใช้กับ modules อื่นๆ ได้ที่นี่
 })
 
