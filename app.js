@@ -140,22 +140,23 @@ app.use(favicon(path.resolve(__dirname, 'public', 'assets', 'favicon.png')))
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.json({ limit: '10mb', inflate: true }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
-app.use((err, req, res, next) => {
-  console.error(err)
-  res.status(500).send(err.message)}
-)
 app.use(compression({
   filter: (req, res) => req.headers['x-no-compression'] ? false : compression.filter(req, res)
 }))
-
-// set up rate limiter: maximum of five requests per minute
-// apply rate limiter to all requests
-app.use(RateLimit({
-  windowMs        : 1 * 60 * 1000,  // 1 minutes
-  max             : 100,            // Limit each IP to 100 requests per `window` (here, per 1 minutes)
-  standardHeaders : true,           // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders   : false           // Disable the `X-RateLimit-*` headers
-}))
+app.use(
+  // set up rate limiter: maximum of five requests per minute
+  // apply rate limiter to all requests
+  RateLimit({
+    windowMs        : 1 * 60 * 1000,  // 1 minutes
+    max             : 100,            // Limit each IP to 100 requests per `window` (here, per 1 minutes)
+    standardHeaders : true,           // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders   : false           // Disable the `X-RateLimit-*` headers
+  })
+)
+app.use((err, req, res, next) => {
+  console.error(err)
+  res.status(500).send(err.message)
+})
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -174,12 +175,6 @@ const checkCore = async (req, res, next) => {
   if (!allow) return res.status(503).send('เอร๊ย!! ใครอ่ะ')
   next()
 }
-
-app.get('/', checkCore, (req, res) => {
-  res.sendFile('index.html')
-  res.status(200).send('complete')
-  res.end()
-})
 
 app.get('/statistics', checkCore, words.rest_stat)
 app.get('/views', checkCore, words.rest_views) 
@@ -204,6 +199,11 @@ app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.rest_patchNe
 app.delete('/remove/:by/:target', checkCore, words.rest_remove)
 app.delete('/remove/prev/:by/:target/:previous', checkCore, words.rest_removePrev)
 app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.rest_removeNext)
+
+// app.all('*', checkCore, (req, res) => res.status(404).end())
+app.get('*', checkCore, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')))
+app.put('*', checkCore, (req, res) => res.status(404).end())
+app.delete('*', checkCore, (req, res) => res.status(404).end())
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
