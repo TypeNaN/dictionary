@@ -46,10 +46,7 @@ export default class {
     menu.className = params['class'] || undefined
     menu.textContent = params['title'] || undefined
     if (params['href']) {
-      menu.onclick = (e) => {
-        console.log(e)
-        router(params.href)
-      }
+      menu.onclick = (e) => router(params.href)
     }
     this.ul.appendChild(menu)
   }
