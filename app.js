@@ -176,44 +176,34 @@ const checkCore = async (req, res, next) => {
   next()
 }
 
-app.get('/statistics', checkCore, words.rest_stat)
-app.get('/views', checkCore, words.rest_views) 
-app.get('/views/:skip/:end', checkCore, words.rest_views)
-app.get('/views/:skip/:end/:key/:by', checkCore, words.rest_views)
-app.get('/view/:by/:target', checkCore, words.rest_view)
-app.get('/search/:name', checkCore, words.rest_search)
+app.get('/statistics', checkCore, words.stat)
+app.get('/views', checkCore, words.views) 
+app.get('/views/:skip/:end', checkCore, words.views)
+app.get('/views/:skip/:end/:key/:by', checkCore, words.views)
+app.get('/view/:by/:target', checkCore, words.view)
+app.get('/search/:name', checkCore, words.search)
 
-app.get('/add/:name', checkCore, words.rest_add)
-app.get('/add/prev/:by/:target/:previous', checkCore, words.rest_addPrev)
-app.get('/add/next/:by/:target/:previous/:next', checkCore, words.rest_addNext)
+app.get('/add/:name', checkCore, words.add)
+app.get('/add/prev/:by/:target/:previous', checkCore, words.addPrev)
+app.get('/add/next/:by/:target/:previous/:next', checkCore, words.addNext)
 
-app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.rest_modPrev)
-app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.rest_modPrev)
-app.get('/modify/next/:by/:target/:previous/:next/:edit', checkCore, words.rest_modNext)
+app.get('/modify/prev/:by/:target/:previous/:edit', checkCore, words.modPrev)
+app.get('/modify/prev/:by/:target/:previous/:edit/:merge', checkCore, words.modPrev)
+app.get('/modify/next/:by/:target/:previous/:next/:edit', checkCore, words.modNext)
 
-app.put('/patch/:by/:target', checkCore, words.rest_patch)
-app.put('/patch/:by/:target/:key', checkCore, words.rest_patchKey)
-app.put('/patch/prev/:by/:target/:previous', checkCore, words.rest_patchPrev)
-app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.rest_patchNext)
+app.put('/patch/:by/:target', checkCore, words.patch)
+app.put('/patch/:by/:target/:key', checkCore, words.patchKey)
+app.put('/patch/prev/:by/:target/:previous', checkCore, words.patchPrev)
+app.put('/patch/next/:by/:target/:previous/:next', checkCore, words.patchNext)
 
-app.delete('/remove/:by/:target', checkCore, words.rest_remove)
-app.delete('/remove/prev/:by/:target/:previous', checkCore, words.rest_removePrev)
-app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.rest_removeNext)
+app.delete('/remove/:by/:target', checkCore, words.remove)
+app.delete('/remove/prev/:by/:target/:previous', checkCore, words.removePrev)
+app.delete('/remove/next/:by/:target/:previous/:next', checkCore, words.removeNext)
 
 // app.all('*', checkCore, (req, res) => res.status(404).end())
 app.get('*', checkCore, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')))
 app.put('*', checkCore, (req, res) => res.status(404).end())
 app.delete('*', checkCore, (req, res) => res.status(404).end())
-
-
-// ┌────────────────────────────────────────────────────────────────────────────┐
-// │ เส้นทางบริการ socket                                                          |
-// └────────────────────────────────────────────────────────────────────────────┘
-
-io.on('connection', (socket) => {
-  new words.io(socket)
-  // สร้าง socket client สำหรับใช้กับ modules อื่นๆ ได้ที่นี่
-})
 
 
 // ┌────────────────────────────────────────────────────────────────────────────┐
@@ -242,7 +232,7 @@ httpsServer.listen(app.get('port_https'), () => {
       retryWrites             : true,
       useUnifiedTopology      : true,
       autoIndex               : true,   // Build indexes
-      serverSelectionTimeoutMS: 10000,  // Keep trying to send operations for 5 seconds
+      serverSelectionTimeoutMS: 5000,   // Keep trying to send operations for 5 seconds
       socketTimeoutMS         : 45000,  // Close sockets after 45 seconds of inactivity
       maxPoolSize             : 1,      // Maintain up to 1 socket connections
       family                  : 4       // Use IPv4, skip trying IPv6
@@ -254,6 +244,15 @@ httpsServer.listen(app.get('port_https'), () => {
   const db = mongoose.connection
   db.on('error', console.error.bind(console, 'mongoose connection error:'))
   db.once("open", () => console.info("✔ MongoDB database connection established successfully"))
+
+  // ┌────────────────────────────────────────────────────────────────────────────┐
+  // │ เส้นทางบริการ socket                                                          |
+  // └────────────────────────────────────────────────────────────────────────────┘
+
+  io.on('connection', (socket) => {
+    new words.io(socket)
+    // สร้าง socket client สำหรับใช้กับ modules อื่นๆ ได้ที่นี่
+  })
 })
 
 
