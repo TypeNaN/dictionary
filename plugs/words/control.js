@@ -524,6 +524,24 @@ const addUnknow = async (data) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ ลบคำศัพท์ 1 รายการจาก collection unknows                                     |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const removeUnknow = async (data) => {
+  let { by, target } = data
+  by = remove_spacails(decodeURIComponent(by))
+  target = remove_spacails(decodeURIComponent(target))
+  fillter = (by == 'id' ? isId(target) : { name: target })
+  if ('statusCode' in fillter) return E400('word-unknow-remove-error', `Remove unknow word by ${by} ${target} status code ${fillter.statusCode} bad request`)
+  return unknows.findOne(fillter).then((doc) => {
+    if (!doc) return E304('word-unknow-remove-error', `Can't remove unknow word ${target} because ${target} don't existing`)
+    doc.remove()
+    return R200('word-unknow-remove-success', `Remove unknow word ${target} from dictionary successfully`, doc)
+  }).catch((err) => E500('word-unknow-remove-error', err))
+}
+
+
 
 module.exports = {
   add,
@@ -539,6 +557,7 @@ module.exports = {
   remove,
   removePrev,
   removeNext,
+  removeUnknow,
   search,
   viewsUnknow,
   views,

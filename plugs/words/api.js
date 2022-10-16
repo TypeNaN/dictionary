@@ -29,6 +29,7 @@ const viewsUnknow = async (req, res) => {
   control.viewsUnknow({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
 const addUnknow    = async (req, res) => control.addUnknow(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+const removeUnknow = async (req, res) => control.removeUnknow(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 const add        = async (req, res) => control.add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const patch      = async (req, res) => control.patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
@@ -61,6 +62,7 @@ module.exports = {
   remove,
   removePrev,
   removeNext,
+  removeUnknow,
   search,
   viewsUnknow,
   views,

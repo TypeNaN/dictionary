@@ -52,6 +52,7 @@ module.exports = class {
 
     socket.on('word-unknow-views',  async (data) => respond('word-unknow-views',    control.viewsUnknow,  [data]))
     socket.on('word-unknow-add',    async (data) => broadcast('word-unknow-add',    control.addUnknow,    [data]))
+    socket.on('word-unknow-remove', async (data) => broadcast('word-unknow-remove', control.removeUnknow, [data]))
 
     socket.on('disconnect',       async () => console.log(`Good bye ${socket.id}`))
   }
