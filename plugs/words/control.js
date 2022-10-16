@@ -134,10 +134,10 @@ const view = async (data) => {
 
 const views = async (data) => {
   let { skip, end, sort } = data
-  let { key, by } = sort
   if (typeof skip !== Number || skip < 0) skip = 0
   if (typeof end !== Number || end < skip) end = skip + 100
   if (sort) {
+    let { key, by } = sort
     if (!key) key = 'create'
     if (!by) by = 'asc'
     return words.find().sort({ [key]: by }).skip(skip).limit(end).then((docs) => {
