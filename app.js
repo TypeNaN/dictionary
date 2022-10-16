@@ -176,6 +176,10 @@ const checkCore = async (req, res, next) => {
   next()
 }
 
+app.get('/views/unknow', checkCore, words.viewsUnknow)
+app.get('/views/unknow/:skip/:end', checkCore, words.viewsUnknow)
+app.get('/views/unknow/:skip/:end/:key/:by', checkCore, words.viewsUnknow)
+
 app.get('/statistics', checkCore, words.stat)
 app.get('/views', checkCore, words.views) 
 app.get('/views/:skip/:end', checkCore, words.views)

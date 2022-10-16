@@ -23,6 +23,12 @@ const views  = async (req, res) => {
   control.views({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
 
+const viewsUnknow = async (req, res) => {
+  let { skip, end, key, by } = req.params
+  const sort = (key && by) ? { key: key, by: by } : false
+  control.viewsUnknow({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
+}
+
 const add        = async (req, res) => control.add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const patch      = async (req, res) => control.patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const patchKey   = async (req, res) => control.patchKey(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
@@ -54,6 +60,7 @@ module.exports = {
   removePrev,
   removeNext,
   search,
+  viewsUnknow,
   views,
   view,
   stat

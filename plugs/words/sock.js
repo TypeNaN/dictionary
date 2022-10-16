@@ -49,6 +49,9 @@ module.exports = class {
     socket.on('word-mod-next',    async (data) => broadcast('word-mod-next',    control.modNext,    [data]))
     socket.on('word-patch-next',  async (data) => broadcast('word-patch-next',  control.patchNext,  [data.params, data.data]))
     socket.on('word-remove-next', async (data) => broadcast('word-remove-next', control.removeNext, [data]))
+
+    socket.on('word-unknow-views',  async (data) => respond('word-unknow-views',    control.viewsUnknow,  [data]))
+
     socket.on('disconnect',       async () => console.log(`Good bye ${socket.id}`))
   }
 }

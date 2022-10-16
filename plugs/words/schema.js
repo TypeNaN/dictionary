@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 
 const collection_words    = 'words'
 const collection_removed  = 'words_removed'
+const collection_unknow   = 'words_unknow'
 
 const wordsSchema = new mongoose.Schema({
   create    : { type: Number, default: 0 },                   // เวลาที่ถูกสร้าง
@@ -48,18 +49,36 @@ const removedSchema = new mongoose.Schema({
   name    : { type: String, required: true, unique: true},
   previous: { type: [String], default: [] },
   next    : { type: [String], default: [] }
-},
-{
+}, {
   versionKey: false,
   strict: true,
   collection_removed
 })
 
+
+const unknowSchema = new mongoose.Schema({
+  create  : { type: Number, default: 0 },
+  modified: { type: Number, default: 0 },
+  name    : { type: String, required: true, unique: true}
+}, {
+  timestamps: {
+    createdAt: 'create',
+    updatedAt: 'modified',
+    currentTime: () => Math.floor(new Date().getTime())
+  },
+  versionKey: false,
+  strict: true,
+  collection_unknow
+})
+
+
 const words     = mongoose.model(collection_words, wordsSchema)
 const removeds  = mongoose.model(collection_removed, removedSchema)
+const unknows   = mongoose.model(collection_unknow, unknowSchema)
 
 
 module.exports = {
   words,
-  removeds
+  removeds,
+  unknows
 }
