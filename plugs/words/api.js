@@ -28,6 +28,7 @@ const viewsUnknow = async (req, res) => {
   const sort = (key && by) ? { key: key, by: by } : false
   control.viewsUnknow({ skip: skip, end: end, sort: sort }).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 }
+const addUnknow    = async (req, res) => control.addUnknow(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 
 const add        = async (req, res) => control.add(req.params).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
 const patch      = async (req, res) => control.patch(req.params, req.body).then((data) => SUCCESS(res, data)).catch((err) => ERROR(res, err))
@@ -50,6 +51,7 @@ module.exports = {
   add,
   addPrev,
   addNext,
+  addUnknow,
   modPrev,
   modNext,
   patch,

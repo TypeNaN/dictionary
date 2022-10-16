@@ -506,10 +506,30 @@ const viewsUnknow = async (data) => {
 }
 
 
+// ┌────────────────────────────────────────────────────────────────────────────┐
+// │ เพิ่มคำศัพท์ลงใน collection unknows                                            |
+// └────────────────────────────────────────────────────────────────────────────┘
+
+const addUnknow = async (data) => {
+  let { name } = data
+  name = remove_spacails(decodeURIComponent(name))
+  return unknows.create({ name: name }).then((doc) => {
+    return R200('word-unknow-add-success', `Add unknow word ${name} into the dictionary successfully`, doc)
+  }).catch((err) => {
+    if (err.message.startsWith('E11000 duplicate key error collection')) {
+      return E304('word-unknow-add-error', `Can't add unknow word ${name} into the dictionary ${name} are existing`)
+    }
+    return E500('word-unknow-add-error', err)
+  })
+}
+
+
+
 module.exports = {
   add,
   addPrev,
   addNext,
+  addUnknow,
   modPrev,
   modNext,
   patch,
