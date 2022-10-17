@@ -134,19 +134,18 @@ const view = async (data) => {
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const views = async (data) => {
-  let { skip, end, sort } = data
+  let skip, end, sort, key, by
+  if (data) skip, end, sort = data
   if (typeof skip !== Number || skip < 0) skip = 0
   if (typeof end !== Number || end < skip) end = skip + 100
   if (sort) {
-    let { key, by } = sort
+    key, by = sort
     if (!key) key = 'create'
     if (!by) by = 'asc'
     return words.find().sort({ [key]: by }).skip(skip).limit(end).then((docs) => {
       if (!docs) return E404('word-views-error', `View words are not found`, docs)
       return R200('word-views-success', `View words skip ${skip} end ${end} sort ${sort.key} by ${sort.by}`, docs)
-    }).catch((err) => {
-      return E500('word-views-error', err)
-    })
+    }).catch((err) => E500('word-views-error', err))
   }
   return words.find().skip(skip).limit(end).then((docs) => {
     if (!docs) return E404('word-views-error', `View words are not found`, docs)
@@ -439,6 +438,7 @@ const modNext = async (data) => {
 // ┌────────────────────────────────────────────────────────────────────────────┐
 // │ แก้ไขข้อมูลทั้งหมดในคำถัดไปในคำศัพท์ 1 รายการจาก collection words                  |
 // └────────────────────────────────────────────────────────────────────────────┘
+// ไม่มีการตรวจสอบ data แบบนี้เป็นอันตรายอย่างมาก ต้องการ function verify data ด่วนๆ
 
 const patchNext = async (params, data) => {
   let { by, target, previous, next } = params
@@ -485,19 +485,18 @@ const removeNext = async (data) => {
 // └────────────────────────────────────────────────────────────────────────────┘
 
 const viewsUnknow = async (data) => {
-  let { skip, end, sort } = data
+  let skip, end, sort, key, by
+  if (data) skip, end, sort = data
   if (typeof skip !== Number || skip < 0) skip = 0
   if (typeof end !== Number || end < skip) end = skip + 100
   if (sort) {
-    let { key, by } = sort
+    key, by = sort
     if (!key) key = 'create'
     if (!by) by = 'asc'
     return unknows.find().sort({ [key]: by }).skip(skip).limit(end).then((docs) => {
       if (!docs) return E404('word-unknow-views-error', `View unknow words are not found`, docs)
       return R200('word-unknow-views-success', `View unknow words skip ${skip} end ${end} sort ${key} by ${by}`, docs)
-    }).catch((err) => {
-      return E500('word-unknow-views-error', err)
-    })
+    }).catch((err) => E500('word-unknow-views-error', err))
   }
   return unknows.find().skip(skip).limit(end).then((docs) => {
     if (!docs) return E404('word-unknow-views-error', `View unknow words are not found`, docs)
